@@ -7,6 +7,11 @@ node_modules/
 dist/
 build/
 *.local
+*.tsbuildinfo
+*.d.ts
+!src/**/*.d.ts
+*.config.js
+!postcss.config.js
 
 # Capacitor
 android/
