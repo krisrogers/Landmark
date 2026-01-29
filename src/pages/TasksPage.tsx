@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDatabase } from '@/hooks';
-import { getAllTasks, getFilteredTasks, updateTask } from '@/services/database/queries';
-import { formatRelative, formatDate } from '@/utils/datetime';
+import { getFilteredTasks, updateTask } from '@/services/database/queries';
+import { formatDate } from '@/utils/datetime';
 import { LoadingSpinner } from '@/components/common';
 import type { Task, TaskStatus, TaskFilters } from '@/types';
 
@@ -29,7 +29,7 @@ export function TasksPage() {
         const filters: TaskFilters = {
           status: statusFilter.length > 0 ? statusFilter : undefined,
         };
-        const result = await getFilteredTasks(db, filters);
+        const result = await getFilteredTasks(db!, filters);
         setTasks(result);
       } catch (err) {
         console.error('Failed to load tasks:', err);

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useDatabase } from '@/hooks';
-import { Button, LoadingSpinner } from '@/components/common';
+import { Button } from '@/components/common';
 import { ProjectExporter, ProjectImporter } from '@/services/export';
 
 export function ExportPage() {
-  const { db, isReady } = useDatabase();
+  const { db } = useDatabase();
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);

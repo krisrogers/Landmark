@@ -1,5 +1,5 @@
 import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
-import { BaseDatabaseService, QueryResult, Migration } from './DatabaseService';
+import { BaseDatabaseService, QueryResult } from './DatabaseService';
 import { migrations } from './migrations';
 
 const DB_NAME = 'landmark-db';

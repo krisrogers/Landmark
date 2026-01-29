@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useDatabase } from '@/hooks';
 import { createTask } from '@/services/database/queries';
 import { Button, Input, TextArea } from '@/components/common';
-import type { TaskStatus } from '@/types';
 
 interface TaskFormProps {
   featureId: string;

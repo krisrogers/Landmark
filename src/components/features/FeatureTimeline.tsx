@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { formatRelative, formatDateTime } from '@/utils/datetime';
+import { formatRelative } from '@/utils/datetime';
 import type { Observation, Measurement, Task, Media } from '@/types';
 
 interface TimelineEntry {
@@ -14,7 +14,7 @@ interface FeatureTimelineProps {
   measurements: Measurement[];
   tasks: Task[];
   media: Media[];
-  onRefresh: () => void;
+  onRefresh?: () => void;
 }
 
 export function FeatureTimeline({
@@ -22,7 +22,6 @@ export function FeatureTimeline({
   measurements,
   tasks,
   media,
-  onRefresh,
 }: FeatureTimelineProps) {
   const entries = useMemo(() => {
     const allEntries: TimelineEntry[] = [

@@ -3,8 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useFeatureStore } from '@/store';
 import { useDatabase } from '@/hooks';
 import { getObservationsByFeatureId, getMeasurementsByFeatureId, getTasksByFeatureId, getMediaByFeatureId } from '@/services/database/queries';
-import { getGeometryCenter, calculatePolygonArea, calculateLineLength, formatArea, formatDistance } from '@/services/geo';
-import { formatRelative } from '@/utils/datetime';
+import { calculatePolygonArea, calculateLineLength, formatArea, formatDistance } from '@/services/geo';
 import { Button, Modal, ConfirmModal, LoadingSpinner } from '@/components/common';
 import { FeatureForm } from '@/components/features/FeatureForm';
 import { FeatureTimeline } from '@/components/features/FeatureTimeline';
@@ -52,10 +51,10 @@ export function FeaturePage() {
 
           // Load related data
           const [obs, meas, tsks, med] = await Promise.all([
-            getObservationsByFeatureId(db, id),
-            getMeasurementsByFeatureId(db, id),
-            getTasksByFeatureId(db, id),
-            getMediaByFeatureId(db, id),
+            getObservationsByFeatureId(db!, id!),
+            getMeasurementsByFeatureId(db!, id!),
+            getTasksByFeatureId(db!, id!),
+            getMediaByFeatureId(db!, id!),
           ]);
 
           setObservations(obs);

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useDatabase } from '@/hooks';
 import { createTemplate, updateTemplate } from '@/services/database/queries';
 import { Button, Input, TextArea } from '@/components/common';
-import type { Template, TemplateSchema, GeometryType } from '@/types';
+import type { Template, TemplateSchema } from '@/types';
 import { generateId } from '@/utils/uuid';
 
 interface TemplateEditorProps {

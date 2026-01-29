@@ -4,9 +4,9 @@ import { useGeolocation } from '@/hooks';
 import { useMapStore } from '@/store';
 
 export function GpsControl() {
-  const map = useMap();
+  useMap(); // needed for context but not directly used
   const { showGpsLocation, gpsPosition } = useMapStore();
-  const { getCurrentPosition, isLoading, error, latitude, longitude, accuracy } = useGeolocation();
+  const { getCurrentPosition, latitude, longitude, accuracy } = useGeolocation();
 
   // Get initial position when component mounts
   useEffect(() => {
@@ -62,7 +62,7 @@ export function GpsControl() {
 export function GpsButton() {
   const map = useMap();
   const { showGpsLocation, toggleGpsLocation } = useMapStore();
-  const { getCurrentPosition, isLoading, error, latitude, longitude } = useGeolocation();
+  const { getCurrentPosition, isLoading, error } = useGeolocation();
 
   const handleClick = async () => {
     if (!showGpsLocation) {
