@@ -1,5 +1,3 @@
-import type { GeoJSON } from 'geojson';
-
 export type GeometryType = 'Point' | 'LineString' | 'Polygon';
 
 export interface PointGeometry {

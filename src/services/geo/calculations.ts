@@ -30,7 +30,7 @@ export function calculatePerimeter(geometry: PolygonGeometry): number {
     }
     // MultiLineString - sum all lines
     const multiLine = line as turf.Feature<turf.MultiLineString>;
-    return multiLine.geometry.coordinates.reduce((total, coords) => {
+    return multiLine.geometry.coordinates.reduce((total: number, coords: [number, number][]) => {
       return total + turf.length(turf.lineString(coords), { units: 'meters' });
     }, 0);
   }

@@ -76,7 +76,7 @@ function GpsControlButton() {
 }
 
 function FilterButton() {
-  const { visibleGeometryTypes, visibleTags, toggleGeometryType, resetFilters } = useMapStore();
+  const { visibleGeometryTypes, visibleTags, resetFilters } = useMapStore();
 
   const hasFilters = visibleGeometryTypes.size < 3 || visibleTags.size > 0;
 

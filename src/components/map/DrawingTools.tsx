@@ -1,9 +1,9 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
-import { useMapStore, useFeatureStore, type DrawingMode } from '@/store';
+import { useMapStore, useFeatureStore } from '@/store';
 import { createPointGeometry, createLineGeometry, createPolygonGeometry } from '@/services/geo';
 import { useGeolocation } from '@/hooks';
 import { useNavigate } from 'react-router-dom';
@@ -137,10 +137,10 @@ export function DrawingTools() {
 }
 
 interface DrawingToolbarProps {
-  onAddPoint: () => void;
+  onAddPoint?: () => void;
 }
 
-export function DrawingToolbar({ onAddPoint }: DrawingToolbarProps) {
+export function DrawingToolbar(_props: DrawingToolbarProps) {
   const { drawingMode, setDrawingMode } = useMapStore();
   const { latitude, longitude, getCurrentPosition, isLoading } = useGeolocation();
   const { createFeature } = useFeatureStore();

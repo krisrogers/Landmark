@@ -80,7 +80,8 @@ export class NativeDatabase extends BaseDatabaseService {
     const jsonString = decoder.decode(data);
     const importData = JSON.parse(jsonString);
 
-    await this.db!.importFromJson(JSON.stringify(importData));
+    // Use executeSet for importing data from JSON
+    await (this.db as unknown as { importFromJson: (json: string) => Promise<void> }).importFromJson(JSON.stringify(importData));
     await this.runMigrations();
   }
 

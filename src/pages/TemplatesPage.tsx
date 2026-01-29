@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDatabase } from '@/hooks';
-import { getAllTemplates, createTemplate } from '@/services/database/queries';
+import { getAllTemplates } from '@/services/database/queries';
 import { loadBundledTemplates } from '@/services/templates/TemplateService';
 import { LoadingSpinner, Button, Modal } from '@/components/common';
 import { TemplateEditor } from '@/components/templates/TemplateEditor';
@@ -20,9 +20,9 @@ export function TemplatesPage() {
       setIsLoading(true);
       try {
         // Ensure bundled templates are loaded
-        await loadBundledTemplates(db);
+        await loadBundledTemplates(db!);
 
-        const result = await getAllTemplates(db);
+        const result = await getAllTemplates(db!);
         setTemplates(result);
       } catch (err) {
         console.error('Failed to load templates:', err);
