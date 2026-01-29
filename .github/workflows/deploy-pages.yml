@@ -5,12 +5,10 @@ on:
     branches:
       - main
       - master
-      - claude/landmark-v1-scope-ehXkT
   pull_request:
     branches:
       - main
       - master
-      - claude/landmark-v1-scope-ehXkT
   workflow_dispatch:
 
 permissions:
@@ -37,6 +35,7 @@ jobs:
 
       - name: Setup Pages
         if: github.event_name != 'pull_request'
+        id: pages
         uses: actions/configure-pages@v4
 
       - name: Install dependencies
@@ -45,7 +44,10 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          VITE_BASE_PATH: ${{ steps.pages.outputs.base_path || '/' }}
+
+      - name: List build output
+        run: ls -la dist/
 
       - name: Upload artifact
         if: github.event_name != 'pull_request'
