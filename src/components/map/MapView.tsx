@@ -9,7 +9,7 @@ import { FeatureLayer } from './FeatureLayer';
 import { GpsControl } from './GpsControl';
 import { DrawingTools } from './DrawingTools';
 import { BasemapSelector } from './BasemapSelector';
-import { MapControls } from './MapControls';
+import { MapControls, GpsControlButton } from './MapControls';
 
 // Fix Leaflet default icon issue
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
@@ -101,6 +101,7 @@ export function MapView() {
         <FeatureLayer features={features} isLoading={isLoading} />
         <GpsControl />
         <DrawingTools />
+        <GpsControlButton />
       </MapContainer>
 
       <MapControls />
