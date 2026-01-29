@@ -4,9 +4,13 @@ on:
   push:
     branches:
       - main
+      - master
+      - claude/landmark-v1-scope-ehXkT
   pull_request:
     branches:
       - main
+      - master
+      - claude/landmark-v1-scope-ehXkT
   workflow_dispatch:
 
 permissions:
