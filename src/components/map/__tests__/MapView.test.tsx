@@ -148,8 +148,9 @@ describe('Leaflet Context - Regression Tests', () => {
   });
 
   it('components using useMap hook do not throw context errors', async () => {
-    // Import the actual component to verify structure
-    const { GpsControlButton } = await import('../MapControls');
+    // Verify GpsControlButton export exists (uses useMap internally)
+    const mapControlsModule = await import('../MapControls');
+    expect(mapControlsModule.GpsControlButton).toBeDefined();
 
     // When wrapped in proper context (via MapView), it should work
     const { MapView } = await import('../MapView');
