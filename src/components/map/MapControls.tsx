@@ -6,14 +6,13 @@ import { DrawingToolbar } from './DrawingTools';
 export function MapControls() {
   return (
     <>
-      <GpsControlButton />
       <FilterButton />
       <DrawingToolbar onAddPoint={() => {}} />
     </>
   );
 }
 
-function GpsControlButton() {
+export function GpsControlButton() {
   const map = useMap();
   const { showGpsLocation, toggleGpsLocation } = useMapStore();
   const { getCurrentPosition, isLoading, error } = useGeolocation();
