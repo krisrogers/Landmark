@@ -234,5 +234,41 @@ describe('App Initialization', () => {
         expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
       });
     });
+
+    it('handles null rejection value gracefully', async () => {
+      mockGetDatabase.mockRejectedValue(null);
+
+      renderApp();
+
+      await waitFor(() => {
+        expect(screen.getByText('Failed to Initialize')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('Unknown error')).toBeInTheDocument();
+    });
+
+    it('handles undefined rejection value gracefully', async () => {
+      mockGetDatabase.mockRejectedValue(undefined);
+
+      renderApp();
+
+      await waitFor(() => {
+        expect(screen.getByText('Failed to Initialize')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('Unknown error')).toBeInTheDocument();
+    });
+
+    it('handles string rejection value gracefully', async () => {
+      mockGetDatabase.mockRejectedValue('Connection timeout');
+
+      renderApp();
+
+      await waitFor(() => {
+        expect(screen.getByText('Failed to Initialize')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('Connection timeout')).toBeInTheDocument();
+    });
   });
 });

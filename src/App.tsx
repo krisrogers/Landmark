@@ -22,7 +22,8 @@ export default function App() {
         setIsInitialized(true);
       } catch (err) {
         console.error('Failed to initialize app:', err);
-        setError((err as Error).message);
+        const message = err instanceof Error ? err.message : String(err ?? 'Unknown error');
+        setError(message);
       }
     }
 
