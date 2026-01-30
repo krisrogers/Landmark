@@ -172,4 +172,49 @@ describe('Leaflet Context - Regression Tests', () => {
     // This verifies the fix: GpsControlButton was moved out of MapControls
     expect(mockUseMap).not.toHaveBeenCalled();
   });
+
+  it('GpsControl component does not directly use useMap hook', async () => {
+    // GpsControl renders Circle/CircleMarker which get context from MapContainer
+    // It should NOT call useMap directly
+    const { GpsControl } = await import('../GpsControl');
+
+    mockUseMap.mockClear();
+
+    // GpsControl should render without calling useMap
+    // (Circle and CircleMarker components get context automatically from MapContainer)
+    render(<GpsControl />);
+
+    // Verify useMap was not called by GpsControl itself
+    expect(mockUseMap).not.toHaveBeenCalled();
+  });
+
+  it('GpsControlButton is inside MapContainer in the component tree', async () => {
+    // Verify the component structure: GpsControlButton should be a child of MapContainer
+    const { MapView } = await import('../MapView');
+    const { getByTestId } = render(<MapView />);
+
+    const mapContainer = getByTestId('map-container');
+
+    // Find the GPS button by looking for the button with the location icon title
+    const gpsButton = mapContainer.querySelector('button[title*="location"]');
+    expect(gpsButton).toBeInTheDocument();
+  });
+
+  it('all components using useMap are inside MapContainer', async () => {
+    // Comprehensive test to ensure MapView renders with correct structure
+    const { MapView } = await import('../MapView');
+    const { getByTestId } = render(<MapView />);
+
+    // MapContainer should exist
+    const mapContainer = getByTestId('map-container');
+    expect(mapContainer).toBeInTheDocument();
+
+    // ZoomControl should be inside MapContainer
+    const zoomControl = mapContainer.querySelector('[data-testid="zoom-control"]');
+    expect(zoomControl).toBeInTheDocument();
+
+    // TileLayer should be inside MapContainer
+    const tileLayer = mapContainer.querySelector('[data-testid="tile-layer"]');
+    expect(tileLayer).toBeInTheDocument();
+  });
 });
