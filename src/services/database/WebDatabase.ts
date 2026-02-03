@@ -13,9 +13,9 @@ export class WebDatabase extends BaseDatabaseService {
 
     console.log('[WebDatabase] Starting initialization...');
 
-    console.log('[WebDatabase] Loading sql.js from CDN...');
+    console.log('[WebDatabase] Loading sql.js...');
     const SQL = await initSqlJs({
-      locateFile: (file: string) => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.9.0/${file}`
+      locateFile: () => `${import.meta.env.BASE_URL}sql-wasm.wasm`
     });
     console.log('[WebDatabase] sql.js loaded');
 
@@ -75,7 +75,7 @@ export class WebDatabase extends BaseDatabaseService {
 
   async importDatabase(data: Uint8Array): Promise<void> {
     const SQL = await initSqlJs({
-      locateFile: (file: string) => `https://sql.js.org/dist/${file}`
+      locateFile: () => `${import.meta.env.BASE_URL}sql-wasm.wasm`
     });
     this.db = new SQL.Database(data);
     await this.persist();
