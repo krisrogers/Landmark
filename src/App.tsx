@@ -15,10 +15,13 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('[App] Starting initialization...');
     // Defer initialization to next frame to let UI render first
     const timeoutId = setTimeout(async () => {
       try {
+        console.log('[App] Calling getDatabase()...');
         await getDatabase();
+        console.log('[App] Database initialized successfully');
         setIsInitialized(true);
       } catch (err) {
         console.error('Failed to initialize app:', err);

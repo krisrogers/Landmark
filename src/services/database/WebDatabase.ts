@@ -11,20 +11,33 @@ export class WebDatabase extends BaseDatabaseService {
   async initialize(): Promise<void> {
     if (this.initialized) return;
 
-    // Use streaming compilation for better performance
+    console.log('[WebDatabase] Starting initialization...');
+
+    console.log('[WebDatabase] Loading sql.js from CDN...');
     const SQL = await initSqlJs({
       locateFile: (file: string) => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.9.0/${file}`
     });
+    console.log('[WebDatabase] sql.js loaded');
 
+    console.log('[WebDatabase] Loading from IndexedDB...');
     const savedData = await this.loadFromIndexedDB();
+    console.log('[WebDatabase] IndexedDB loaded, has data:', !!savedData);
+
     if (savedData) {
+      console.log('[WebDatabase] Creating database from saved data...');
       this.db = new SQL.Database(savedData);
     } else {
+      console.log('[WebDatabase] Creating new database...');
       this.db = new SQL.Database();
     }
+    console.log('[WebDatabase] Database created');
 
+    console.log('[WebDatabase] Running migrations...');
     await this.runMigrations();
+    console.log('[WebDatabase] Migrations complete');
+
     this.initialized = true;
+    console.log('[WebDatabase] Initialization complete');
   }
 
   async execute(sql: string, params?: unknown[]): Promise<QueryResult> {
