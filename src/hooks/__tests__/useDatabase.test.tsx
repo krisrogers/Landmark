@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 
 // Create mock database instance
@@ -30,7 +30,7 @@ describe('useDatabase', () => {
 
   describe('successful initialization', () => {
     it('returns isReady=false initially when no sync database exists', () => {
-      mockGetDatabase.mockReturnValue(new Promise(() => {}));
+      mockGetDatabase.mockReturnValue(new Promise(() => {}) as any);
 
       const { result } = renderHook(() => useDatabase());
 
@@ -151,7 +151,7 @@ describe('useDatabase', () => {
       const promise = new Promise(resolve => {
         resolvePromise = resolve;
       });
-      mockGetDatabase.mockReturnValue(promise);
+      mockGetDatabase.mockReturnValue(promise as any);
 
       const { result, unmount } = renderHook(() => useDatabase());
 
@@ -295,7 +295,7 @@ describe('useDatabaseQuery', () => {
   describe('when database is not ready', () => {
     it('does not execute query when db is null', async () => {
       mockGetDatabaseSync.mockReturnValue(null);
-      mockGetDatabase.mockReturnValue(new Promise(() => {})); // Never resolves
+      mockGetDatabase.mockReturnValue(new Promise(() => {}) as any); // Never resolves
 
       const queryFn = vi.fn().mockResolvedValue([]);
 
