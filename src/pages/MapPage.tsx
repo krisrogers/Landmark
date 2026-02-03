@@ -1,8 +1,12 @@
 import { MapView } from '@/components/map';
 import { useOfflineStatus } from '@/hooks';
 
+console.log('[MapPage.tsx] Module loaded');
+
 export function MapPage() {
   const { isOffline } = useOfflineStatus();
+
+  console.log('[MapPage] Component rendering, isOffline:', isOffline);
 
   return (
     <div className="h-full relative">
