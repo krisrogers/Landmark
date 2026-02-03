@@ -10,7 +10,10 @@ import { ExportPage } from './pages/ExportPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { Navigation } from './components/Navigation';
 
+console.log('[App.tsx] Module loaded');
+
 export default function App() {
+  console.log('[App] Component rendering...');
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
