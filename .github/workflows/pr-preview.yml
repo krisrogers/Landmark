@@ -42,7 +42,7 @@ jobs:
 
       - name: Deploy to Netlify
         id: netlify
-        if: env.NETLIFY_AUTH_TOKEN != ''
+        if: ${{ secrets.NETLIFY_AUTH_TOKEN != '' }}
         uses: nwtgck/actions-netlify@v3
         with:
           publish-dir: './dist'
@@ -58,7 +58,7 @@ jobs:
         timeout-minutes: 5
 
       - name: Comment with artifact link
-        if: env.NETLIFY_AUTH_TOKEN == ''
+        if: ${{ secrets.NETLIFY_AUTH_TOKEN == '' }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -69,5 +69,3 @@ jobs:
               repo: context.repo.repo,
               body: `## Deploy Preview\n\nBuild completed successfully! Download the build artifact from the [workflow run](${runUrl}).\n\nTo enable automatic deploy previews, add \`NETLIFY_AUTH_TOKEN\` and \`NETLIFY_SITE_ID\` secrets to this repository.`
             });
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
