@@ -36,16 +36,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,wasm}'],
-        cleanupOutdatedCaches: true,
-        navigateFallback: null,
         runtimeCaching: [
-          {
-            urlPattern: /\.(?:js|css)$/,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'static-resources'
-            }
-          },
           {
             urlPattern: /^https:\/\/.*tile.*\.png$/,
             handler: 'CacheFirst',
