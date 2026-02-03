@@ -13,9 +13,10 @@ import { Navigation } from './components/Navigation';
 console.log('[App.tsx] Module loaded');
 
 export default function App() {
-  console.log('[App] Component rendering...');
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  console.log('[App] Component rendering, isInitialized:', isInitialized, 'error:', error);
 
   useEffect(() => {
     console.log('[App] Starting initialization...');
@@ -37,6 +38,7 @@ export default function App() {
   }, []);
 
   if (error) {
+    console.log('[App] Rendering error UI');
     return (
       <div className="h-full flex flex-col items-center justify-center p-4">
         <div className="text-red-600 mb-4">
@@ -57,9 +59,11 @@ export default function App() {
   }
 
   if (!isInitialized) {
+    console.log('[App] Rendering loading spinner');
     return <LoadingOverlay message="Initializing Landmark..." />;
   }
 
+  console.log('[App] Rendering main UI');
   return (
     <div className="h-full flex flex-col">
       <main className="flex-1 overflow-hidden">
