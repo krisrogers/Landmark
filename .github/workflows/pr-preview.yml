@@ -50,6 +50,9 @@ jobs:
         env:
           VITE_BASE_PATH: '/Landmark/pr/${{ github.event.pull_request.number }}/'
 
+      - name: Copy index.html to 404.html for SPA routing
+        run: cp dist/index.html dist/404.html
+
       - name: Deploy preview to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
