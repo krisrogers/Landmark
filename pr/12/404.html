@@ -1,23 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/Landmark/pr/12/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#16a34a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Landmark</title>
-    <script>
-      // Single Page App routing for GitHub Pages
-      // Redirects 404s to index.html with the path preserved
-      const path = window.location.pathname;
-      const search = window.location.search;
-      const hash = window.location.hash;
-      sessionStorage.setItem('spa-redirect', path + search + hash);
-      window.location.replace(
-        window.location.origin +
-        (window.location.pathname.match(/^\/[^/]+\/pr\/\d+/) || [''])[0] +
-        '/'
-      );
-    </script>
-  </head>
+    <script type="module" crossorigin src="/Landmark/pr/12/assets/index-6JO4k_P1.js"></script>
+    <link rel="stylesheet" crossorigin href="/Landmark/pr/12/assets/index-9Hal2P9-.css">
+  <link rel="manifest" href="/Landmark/pr/12/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/Landmark/pr/12/registerSW.js"></script></head>
   <body>
-    Redirecting...
+    <div id="root"></div>
   </body>
 </html>
