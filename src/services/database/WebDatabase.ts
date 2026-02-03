@@ -11,8 +11,9 @@ export class WebDatabase extends BaseDatabaseService {
   async initialize(): Promise<void> {
     if (this.initialized) return;
 
+    // Use streaming compilation for better performance
     const SQL = await initSqlJs({
-      locateFile: (file: string) => `https://sql.js.org/dist/${file}`
+      locateFile: (file: string) => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.9.0/${file}`
     });
 
     const savedData = await this.loadFromIndexedDB();

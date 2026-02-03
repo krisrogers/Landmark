@@ -15,9 +15,9 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function initialize() {
+    // Defer initialization to next frame to let UI render first
+    const timeoutId = setTimeout(async () => {
       try {
-        // Initialize database
         await getDatabase();
         setIsInitialized(true);
       } catch (err) {
@@ -25,9 +25,9 @@ export default function App() {
         const message = err instanceof Error ? err.message : String(err ?? 'Unknown error');
         setError(message);
       }
-    }
+    }, 0);
 
-    initialize();
+    return () => clearTimeout(timeoutId);
   }, []);
 
   if (error) {
