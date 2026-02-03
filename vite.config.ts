@@ -3,13 +3,14 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
-const isPRPreview = process.env.VITE_BASE_PATH?.includes('/pr/');
+const basePath = process.env.VITE_BASE_PATH || '/';
 
 export default defineConfig({
-  base: process.env.VITE_BASE_PATH || '/',
+  base: basePath,
   plugins: [
     react(),
-    !isPRPreview && VitePWA({
+    VitePWA({
+      scope: basePath,
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icons/*.png', 'templates/*.json'],
       manifest: {
@@ -50,7 +51,7 @@ export default defineConfig({
         ]
       }
     })
-  ].filter(Boolean),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src')
