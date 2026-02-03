@@ -26,7 +26,8 @@ export function useDatabase(): UseDatabaseResult {
         }
       } catch (err) {
         if (!cancelled) {
-          setError((err as Error).message);
+          const message = err instanceof Error ? err.message : String(err ?? 'Unknown error');
+          setError(message);
         }
       }
     }
@@ -60,7 +61,8 @@ export function useDatabaseQuery<T>(
       const result = await query(db);
       setData(result);
     } catch (err) {
-      setError((err as Error).message);
+      const message = err instanceof Error ? err.message : String(err ?? 'Unknown error');
+      setError(message);
     } finally {
       setIsLoading(false);
     }

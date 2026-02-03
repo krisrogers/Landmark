@@ -10,27 +10,35 @@ import { ExportPage } from './pages/ExportPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { Navigation } from './components/Navigation';
 
+console.log('[App.tsx] Module loaded');
+
 export default function App() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  console.log('[App] Component rendering, isInitialized:', isInitialized, 'error:', error);
+
   useEffect(() => {
-    async function initialize() {
+    console.log('[App] Starting initialization...');
+    // Defer initialization to next frame to let UI render first
+    const timeoutId = setTimeout(async () => {
       try {
-        // Initialize database
+        console.log('[App] Calling getDatabase()...');
         await getDatabase();
+        console.log('[App] Database initialized successfully');
         setIsInitialized(true);
       } catch (err) {
         console.error('Failed to initialize app:', err);
         const message = err instanceof Error ? err.message : String(err ?? 'Unknown error');
         setError(message);
       }
-    }
+    }, 0);
 
-    initialize();
+    return () => clearTimeout(timeoutId);
   }, []);
 
   if (error) {
+    console.log('[App] Rendering error UI');
     return (
       <div className="h-full flex flex-col items-center justify-center p-4">
         <div className="text-red-600 mb-4">
@@ -51,9 +59,11 @@ export default function App() {
   }
 
   if (!isInitialized) {
+    console.log('[App] Rendering loading spinner');
     return <LoadingOverlay message="Initializing Landmark..." />;
   }
 
+  console.log('[App] Rendering main UI');
   return (
     <div className="h-full flex flex-col">
       <main className="flex-1 overflow-hidden">

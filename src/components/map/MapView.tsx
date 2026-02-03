@@ -11,6 +11,8 @@ import { DrawingTools } from './DrawingTools';
 import { BasemapSelector } from './BasemapSelector';
 import { MapControls, GpsControlButton } from './MapControls';
 
+console.log('[MapView.tsx] Module loaded');
+
 // Fix Leaflet default icon issue
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -84,6 +86,8 @@ function BasemapLayer({ type }: BasemapLayerProps) {
 export function MapView() {
   const { center, zoom, basemap } = useMapStore();
   const { features, isLoading } = useFeatures();
+
+  console.log('[MapView] Component rendering, center:', center, 'zoom:', zoom, 'basemap:', basemap, 'featuresCount:', features.length, 'isLoading:', isLoading);
 
   return (
     <div className="relative h-full w-full">

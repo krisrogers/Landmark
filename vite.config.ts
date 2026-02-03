@@ -3,11 +3,14 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
+const basePath = process.env.VITE_BASE_PATH || '/';
+
 export default defineConfig({
-  base: process.env.VITE_BASE_PATH || '/',
+  base: basePath,
   plugins: [
     react(),
     VitePWA({
+      scope: basePath,
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icons/*.png', 'templates/*.json'],
       manifest: {
