@@ -49,6 +49,9 @@ jobs:
         run: npm run build
         env:
           VITE_BASE_PATH: '/Landmark/pr/${{ github.event.pull_request.number }}/'
+          VITE_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+          VITE_PR_NUMBER: ${{ github.event.pull_request.number }}
+          VITE_BUILD_TIME: ${{ github.event.pull_request.updated_at }}
 
       - name: Copy index.html to 404.html for SPA routing
         run: cp dist/index.html dist/404.html
@@ -68,6 +71,8 @@ jobs:
         with:
           script: |
             const previewUrl = `https://${context.repo.owner}.github.io/${context.repo.repo}/pr/${{ github.event.pull_request.number }}/`;
+            const commitSha = '${{ github.event.pull_request.head.sha }}';
+            const shortSha = commitSha.slice(0, 7);
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
@@ -76,7 +81,7 @@ jobs:
             });
 
             const botComment = comments.find(c => c.body.includes('Deploy Preview') && c.user.type === 'Bot');
-            const body = `## Deploy Preview\n\nPreview deployed to: ${previewUrl}\n\nThis preview will update automatically as you push changes.`;
+            const body = `## Deploy Preview\n\nPreview deployed to: ${previewUrl}\n\n**Version:** \`${shortSha}\` (PR #${{ github.event.pull_request.number }})\n\nThis preview will update automatically as you push changes.`;
 
             if (botComment) {
               await github.rest.issues.updateComment({
