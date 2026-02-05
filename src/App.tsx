@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { getDatabase } from './services/database';
-import { LoadingOverlay } from './components/common';
+import { LoadingOverlay, VersionWatermark } from './components/common';
 import { MapPage } from './pages/MapPage';
 import { FeaturePage } from './pages/FeaturePage';
 import { TasksPage } from './pages/TasksPage';
@@ -78,6 +78,7 @@ export default function App() {
         </Routes>
       </main>
       <Navigation />
+      <VersionWatermark />
     </div>
   );
 }
