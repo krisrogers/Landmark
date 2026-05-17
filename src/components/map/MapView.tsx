@@ -3,8 +3,9 @@ import { MapContainer, TileLayer, ZoomControl, useMap, useMapEvents } from 'reac
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-import { useMapStore } from '@/store';
+import { useMapStore, useFeatureStore } from '@/store';
 import { useFeatures } from '@/hooks';
+import { getFeaturesBounds } from '@/services/geo';
 import { FeatureLayer } from './FeatureLayer';
 import { GpsControl } from './GpsControl';
 import { DrawingTools } from './DrawingTools';
@@ -41,16 +42,28 @@ function MapEvents() {
 
 function MapViewUpdater() {
   const map = useMap();
-  const { center, zoom } = useMapStore();
+  const { gpsPosition } = useMapStore();
+  const { features, isLoading } = useFeatureStore();
   const initializedRef = useRef(false);
 
   useEffect(() => {
-    if (!initializedRef.current) {
+    if (initializedRef.current || isLoading) return;
+
+    const bounds = getFeaturesBounds(features);
+    if (bounds) {
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
       initializedRef.current = true;
-      // On first render, set the initial view
-      map.setView(center, zoom);
+      return;
     }
-  }, [map, center, zoom]);
+
+    if (gpsPosition) {
+      map.setView(
+        [gpsPosition.coords.latitude, gpsPosition.coords.longitude],
+        15
+      );
+      initializedRef.current = true;
+    }
+  }, [map, features, isLoading, gpsPosition]);
 
   return null;
 }
