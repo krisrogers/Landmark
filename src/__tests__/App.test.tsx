@@ -103,6 +103,8 @@ vi.mock('../store', () => ({
     setBasemap: vi.fn(),
   }),
   useFeatureStore: () => ({
+    features: [],
+    isLoading: false,
     createFeature: vi.fn(),
   }),
 }));

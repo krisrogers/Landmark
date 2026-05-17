@@ -1,5 +1,5 @@
 import * as turf from '@turf/turf';
-import type { FeatureGeometry, PointGeometry, LineStringGeometry, PolygonGeometry } from '@/types';
+import type { Feature as LandmarkFeature, FeatureGeometry, PointGeometry, LineStringGeometry, PolygonGeometry } from '@/types';
 
 export function calculatePolygonArea(geometry: PolygonGeometry): number {
   const polygon = turf.polygon(geometry.coordinates);
@@ -54,6 +54,41 @@ export function getGeometryCenter(geometry: FeatureGeometry): [number, number] {
 
   const center = turf.centroid(feature);
   return [center.geometry.coordinates[1], center.geometry.coordinates[0]];
+}
+
+export function getFeaturesBounds(
+  features: LandmarkFeature[]
+): [[number, number], [number, number]] | null {
+  let minLat = Infinity;
+  let minLng = Infinity;
+  let maxLat = -Infinity;
+  let maxLng = -Infinity;
+
+  const extend = (lng: number, lat: number) => {
+    if (lat < minLat) minLat = lat;
+    if (lng < minLng) minLng = lng;
+    if (lat > maxLat) maxLat = lat;
+    if (lng > maxLng) maxLng = lng;
+  };
+
+  for (const f of features) {
+    switch (f.geometry.type) {
+      case 'Point':
+        extend(f.geometry.coordinates[0], f.geometry.coordinates[1]);
+        break;
+      case 'LineString':
+        for (const [lng, lat] of f.geometry.coordinates) extend(lng, lat);
+        break;
+      case 'Polygon':
+        for (const ring of f.geometry.coordinates) {
+          for (const [lng, lat] of ring) extend(lng, lat);
+        }
+        break;
+    }
+  }
+
+  if (!Number.isFinite(minLat)) return null;
+  return [[minLat, minLng], [maxLat, maxLng]];
 }
 
 export function getGeometryBounds(geometry: FeatureGeometry): [[number, number], [number, number]] {

@@ -14,6 +14,7 @@ vi.mock('react-leaflet', async () => {
       // Return a mock map object
       return {
         setView: vi.fn(),
+        fitBounds: vi.fn(),
         getZoom: vi.fn(() => 10),
         on: vi.fn(),
         off: vi.fn(),
@@ -103,6 +104,8 @@ vi.mock('../../../store', () => ({
     setBasemap: vi.fn(),
   }),
   useFeatureStore: () => ({
+    features: [],
+    isLoading: false,
     createFeature: vi.fn(),
   }),
 }));

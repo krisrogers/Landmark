@@ -32,8 +32,8 @@ interface MapState {
 export const useMapStore = create<MapState>()(
   persist(
     (set) => ({
-      center: [0, 0],
-      zoom: 13,
+      center: [20, 0],
+      zoom: 2,
       basemap: 'osm',
       drawingMode: 'none',
       showGpsLocation: true,
