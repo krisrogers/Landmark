@@ -1,15 +1,16 @@
 /**
  * Feature detail: photos, notes, location summary, edit and delete.
  */
+import { Camera, Map as MapLibreMap } from '@maplibre/maplibre-react-native';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 
 import { FeatureOverlays } from '@/components/FeatureOverlays';
 import { BorderRadius, Colors, Spacing, UncategorizedColor } from '@/constants/theme';
-import { describeGeometry, geometryCenter, geometryToLatLngs } from '@/lib/geo';
+import { describeGeometry, geometryBounds } from '@/lib/geo';
+import { SATELLITE_STYLE } from '@/lib/mapStyles';
 import { photoUri } from '@/lib/photoStorage';
 import { useDataStore } from '@/store/dataStore';
 
@@ -33,18 +34,7 @@ export default function FeatureDetailScreen() {
   }
 
   const category = categories.find((c) => c.id === feature.categoryId);
-  const center = geometryCenter(feature.geometry);
-
-  // Region that fits the geometry with a little padding.
-  const coords = geometryToLatLngs(feature.geometry);
-  const lats = coords.map((c) => c.latitude);
-  const lngs = coords.map((c) => c.longitude);
-  const region = {
-    latitude: center.latitude,
-    longitude: center.longitude,
-    latitudeDelta: Math.max((Math.max(...lats) - Math.min(...lats)) * 1.8, 0.002),
-    longitudeDelta: Math.max((Math.max(...lngs) - Math.min(...lngs)) * 1.8, 0.002),
-  };
+  const bounds = geometryBounds(feature.geometry);
 
   const confirmDelete = () => {
     Alert.alert('Delete', `Delete "${feature.name}"? This can't be undone.`, [
@@ -66,23 +56,30 @@ export default function FeatureDetailScreen() {
       <ScrollView style={styles.flex} contentContainerStyle={styles.container}>
         {/* Mini map */}
         <View style={styles.mapWrapper}>
-          <MapView
+          <MapLibreMap
             style={styles.map}
-            provider={PROVIDER_GOOGLE}
-            initialRegion={region}
-            mapType="hybrid"
-            scrollEnabled={false}
-            zoomEnabled={false}
-            rotateEnabled={false}
-            pitchEnabled={false}
-            toolbarEnabled={false}
+            mapStyle={SATELLITE_STYLE}
+            dragPan={false}
+            touchZoom={false}
+            doubleTapZoom={false}
+            doubleTapHoldZoom={false}
+            touchRotate={false}
+            touchPitch={false}
+            compass={false}
+            logo={false}
           >
+            <Camera
+              initialViewState={{
+                bounds,
+                padding: { top: 30, bottom: 30, left: 30, right: 30 },
+              }}
+            />
             <FeatureOverlays
               features={[feature]}
               categories={categories}
               onPressFeature={() => {}}
             />
-          </MapView>
+          </MapLibreMap>
         </View>
 
         {/* Summary */}

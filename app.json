@@ -41,8 +41,12 @@
           "cameraPermission": "Landmark uses the camera to photograph things you map on your property."
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "@maplibre/maplibre-react-native"
     ],
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
     "experiments": {
       "typedRoutes": false,
       "reactCompiler": true

@@ -27,11 +27,14 @@ export interface PolygonGeometry {
 
 export type FeatureGeometry = PointGeometry | LineStringGeometry | PolygonGeometry;
 
-/** react-native-maps coordinate. */
+/** Coordinate as produced by expo-location. */
 export interface LatLng {
   latitude: number;
   longitude: number;
 }
+
+/** GeoJSON-style position, [longitude, latitude]. Matches MapLibre's LngLat. */
+export type Position = [number, number];
 
 const EARTH_RADIUS_M = 6371008.8;
 
@@ -67,22 +70,31 @@ export function createPolygonGeometry(coords: LatLng[]): PolygonGeometry {
 }
 
 // ---------------------------------------------------------------------------
-// Conversion (GeoJSON <-> react-native-maps)
+// Conversion (GeoJSON positions <-> LatLng objects)
 // ---------------------------------------------------------------------------
 
-export function toLatLng(position: [number, number]): LatLng {
+export function toLatLng(position: Position): LatLng {
   return { latitude: position[1], longitude: position[0] };
 }
 
-/** Returns the coordinates of a geometry as react-native-maps LatLng objects. */
+export function toPosition(coord: LatLng): Position {
+  return [coord.longitude, coord.latitude];
+}
+
+/** Returns the coordinates of a geometry as LatLng objects. */
 export function geometryToLatLngs(geometry: FeatureGeometry): LatLng[] {
+  return geometryPositions(geometry).map(toLatLng);
+}
+
+/** Returns the coordinates of a geometry as GeoJSON positions. */
+export function geometryPositions(geometry: FeatureGeometry): Position[] {
   switch (geometry.type) {
     case 'Point':
-      return [toLatLng(geometry.coordinates)];
+      return [geometry.coordinates];
     case 'LineString':
-      return geometry.coordinates.map(toLatLng);
+      return geometry.coordinates;
     case 'Polygon':
-      return geometry.coordinates[0].map(toLatLng);
+      return geometry.coordinates[0];
   }
 }
 
@@ -166,6 +178,37 @@ export function geometryCenter(geometry: FeatureGeometry): LatLng {
     { latitude: 0, longitude: 0 }
   );
   return { latitude: sum.latitude / pts.length, longitude: sum.longitude / pts.length };
+}
+
+/**
+ * Bounding box of a geometry as [west, south, east, north].
+ * Point geometries get a small padding so the box is never degenerate.
+ */
+export function geometryBounds(geometry: FeatureGeometry): [number, number, number, number] {
+  const positions = geometryPositions(geometry);
+  const lngs = positions.map((p) => p[0]);
+  const lats = positions.map((p) => p[1]);
+
+  let [west, south, east, north] = [
+    Math.min(...lngs),
+    Math.min(...lats),
+    Math.max(...lngs),
+    Math.max(...lats),
+  ];
+
+  const minSpan = 0.001; // ~100m
+  if (east - west < minSpan) {
+    const mid = (east + west) / 2;
+    west = mid - minSpan / 2;
+    east = mid + minSpan / 2;
+  }
+  if (north - south < minSpan) {
+    const mid = (north + south) / 2;
+    south = mid - minSpan / 2;
+    north = mid + minSpan / 2;
+  }
+
+  return [west, south, east, north];
 }
 
 // ---------------------------------------------------------------------------

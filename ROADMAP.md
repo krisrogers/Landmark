@@ -37,11 +37,13 @@ The earlier prototype had ideas worth bringing back once capture feels good:
 - Export (GeoJSON / KML for use in other tools)
 - Sharing with family members
 
-## Production build (whenever it matters)
+## Delivery setup (done)
 
-The app currently runs through Expo Go. Publishing a standalone APK / Play Store build needs:
+- Standalone APK via EAS Build (`preview` profile) — no laptop needed in the field
+- Over-the-air updates via EAS Update — new increments reach the phone without reinstalling
+- MapLibre + free Esri satellite imagery — no Google account / API key required
 
-- An [EAS Build](https://docs.expo.dev/build/introduction/) setup
-- A Google Maps API key for Android (free tier; only needed for standalone builds —
-  Expo Go uses its own)
-- Background location permission if walks should keep recording with the screen off
+## Possible later (needs APK rebuild)
+
+- Background location permission so walks keep recording with the screen off
+- Play Store release (production profile already configured in eas.json)

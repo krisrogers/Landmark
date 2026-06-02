@@ -6,11 +6,18 @@
  * - Walk an area/path with GPS breadcrumbs
  * - Filter by category, jump into feature details
  */
-import { useRouter } from 'expo-router';
+import {
+  Camera,
+  GeoJSONSource,
+  Layer,
+  Map as MapLibreMap,
+  UserLocation,
+  type CameraRef,
+} from '@maplibre/maplibre-react-native';
 import * as Location from 'expo-location';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import MapView, { Polyline, PROVIDER_GOOGLE, type MapType } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CategoryFilterBar } from '@/components/CategoryFilterBar';
@@ -23,26 +30,24 @@ import {
   createPointGeometry,
   createPolygonGeometry,
   formatDistance,
+  toPosition,
   type LatLng,
+  type Position,
 } from '@/lib/geo';
+import { basemapStyle, type BasemapKind } from '@/lib/mapStyles';
 import type { Feature } from '@/lib/types';
 import { useCaptureStore } from '@/store/captureStore';
 import { useDataStore } from '@/store/dataStore';
 
-const DEFAULT_REGION = {
-  // Roughly Australia; replaced by the user's position as soon as we have it.
-  latitude: -25.27,
-  longitude: 133.77,
-  latitudeDelta: 40,
-  longitudeDelta: 40,
-};
-
-const CLOSE_ZOOM = { latitudeDelta: 0.004, longitudeDelta: 0.004 };
+// Roughly Australia; replaced by the user's position as soon as we have it.
+const DEFAULT_CENTER: Position = [133.77, -25.27];
+const DEFAULT_ZOOM = 3;
+const PROPERTY_ZOOM = 16;
 
 export default function MapScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const mapRef = useRef<MapView>(null);
+  const cameraRef = useRef<CameraRef>(null);
 
   const features = useDataStore((s) => s.features);
   const categories = useDataStore((s) => s.categories);
@@ -54,13 +59,26 @@ export default function MapScreen() {
   const { getCurrentPosition, busy: locating } = useCurrentLocation();
   const tracking = useWalkTracking();
 
-  const [mapType, setMapType] = useState<MapType>('hybrid');
+  const [basemap, setBasemap] = useState<BasemapKind>('satellite');
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
 
   const visibleFeatures = useMemo(() => {
     if (categoryFilter === undefined) return features;
     return features.filter((f) => f.categoryId === categoryFilter);
   }, [features, categoryFilter]);
+
+  // The walked breadcrumb trail as GeoJSON for the live tracking line.
+  const trackingTrail = useMemo<GeoJSON.Feature | null>(() => {
+    if (tracking.points.length < 2) return null;
+    return {
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'LineString',
+        coordinates: tracking.points.map(toPosition),
+      },
+    };
+  }, [tracking.points]);
 
   // Ask for location permission and center on the user when the app opens.
   useEffect(() => {
@@ -74,14 +92,11 @@ export default function MapScreen() {
           accuracy: Location.Accuracy.Balanced,
         });
         if (cancelled) return;
-        mapRef.current?.animateToRegion(
-          {
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-            ...CLOSE_ZOOM,
-          },
-          800
-        );
+        cameraRef.current?.easeTo({
+          center: [location.coords.longitude, location.coords.latitude],
+          zoom: PROPERTY_ZOOM,
+          duration: 800,
+        });
       } catch {
         // Stay on the default region if we can't get a fix.
       }
@@ -157,29 +172,37 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <MapView
-        ref={mapRef}
+      <MapLibreMap
         style={StyleSheet.absoluteFill}
-        provider={PROVIDER_GOOGLE}
-        initialRegion={DEFAULT_REGION}
-        mapType={mapType}
-        showsUserLocation={hasLocationPermission}
-        showsMyLocationButton={false}
-        toolbarEnabled={false}
+        mapStyle={basemapStyle(basemap)}
+        attributionPosition={{ bottom: insets.bottom + 90, left: Spacing.md }}
       >
+        <Camera
+          ref={cameraRef}
+          initialViewState={{ center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM }}
+        />
+
+        {hasLocationPermission && <UserLocation accuracy />}
+
         <FeatureOverlays
           features={visibleFeatures}
           categories={categories}
           onPressFeature={openFeature}
         />
-        {isTracking && tracking.points.length > 1 && (
-          <Polyline
-            coordinates={tracking.points}
-            strokeColor={Colors.trackingStroke}
-            strokeWidth={5}
-          />
+
+        {trackingTrail && (
+          <GeoJSONSource id="tracking-trail" data={trackingTrail}>
+            <Layer
+              type="line"
+              id="tracking-trail-line"
+              paint={{
+                'line-color': Colors.trackingStroke,
+                'line-width': 5,
+              }}
+            />
+          </GeoJSONSource>
         )}
-      </MapView>
+      </MapLibreMap>
 
       {/* Top bar */}
       <View style={[styles.topBar, { paddingTop: insets.top + Spacing.sm }]}>
@@ -210,13 +233,13 @@ export default function MapScreen() {
         )}
       </View>
 
-      {/* Map type toggle */}
+      {/* Basemap toggle */}
       <TouchableOpacity
         style={[styles.mapTypeButton, { top: insets.top + 70 }]}
-        onPress={() => setMapType(mapType === 'hybrid' ? 'standard' : 'hybrid')}
+        onPress={() => setBasemap(basemap === 'satellite' ? 'streets' : 'satellite')}
         accessibilityLabel="Toggle satellite view"
       >
-        <Text style={styles.iconButtonText}>{mapType === 'hybrid' ? '🗺️' : '🛰️'}</Text>
+        <Text style={styles.iconButtonText}>{basemap === 'satellite' ? '🗺️' : '🛰️'}</Text>
       </TouchableOpacity>
 
       {/* Bottom actions */}

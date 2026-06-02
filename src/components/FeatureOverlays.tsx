@@ -1,11 +1,12 @@
 /**
- * Renders saved features (pins, paths, areas) on the map.
+ * Renders saved features (pins, paths, areas) on a MapLibre map as a single
+ * GeoJSON source with data-driven styling: each feature carries its category
+ * color in its properties.
  */
-import React from 'react';
-import { Marker, Polygon, Polyline } from 'react-native-maps';
+import { GeoJSONSource, Layer } from '@maplibre/maplibre-react-native';
+import React, { useMemo } from 'react';
 
 import { UncategorizedColor } from '@/constants/theme';
-import { geometryCenter, geometryToLatLngs } from '@/lib/geo';
 import type { Category, Feature } from '@/lib/types';
 
 interface Props {
@@ -14,69 +15,70 @@ interface Props {
   onPressFeature: (feature: Feature) => void;
 }
 
-function colorFor(feature: Feature, categories: Category[]): string {
-  const category = categories.find((c) => c.id === feature.categoryId);
-  return category?.color ?? UncategorizedColor;
-}
-
-/** Adds an alpha channel to a hex color. */
-function withAlpha(hexColor: string, alpha: number): string {
-  const a = Math.round(alpha * 255)
-    .toString(16)
-    .padStart(2, '0');
-  return `${hexColor}${a}`;
-}
+/** Property key carrying the feature id through GeoJSON press events. */
+const FEATURE_ID_KEY = 'featureId';
 
 export function FeatureOverlays({ features, categories, onPressFeature }: Props) {
-  return (
-    <>
-      {features.map((feature) => {
-        const color = colorFor(feature, categories);
-        const coords = geometryToLatLngs(feature.geometry);
+  const collection = useMemo<GeoJSON.FeatureCollection>(() => {
+    const colorByCategory = new Map(categories.map((c) => [c.id, c.color]));
+    return {
+      type: 'FeatureCollection',
+      features: features.map((feature) => ({
+        type: 'Feature',
+        properties: {
+          [FEATURE_ID_KEY]: feature.id,
+          color:
+            (feature.categoryId && colorByCategory.get(feature.categoryId)) ||
+            UncategorizedColor,
+        },
+        geometry: feature.geometry,
+      })),
+    };
+  }, [features, categories]);
 
-        switch (feature.geometry.type) {
-          case 'Point':
-            return (
-              <Marker
-                key={feature.id}
-                coordinate={coords[0]}
-                pinColor={color}
-                title={feature.name}
-                onCalloutPress={() => onPressFeature(feature)}
-              />
-            );
-          case 'LineString':
-            return (
-              <Polyline
-                key={feature.id}
-                coordinates={coords}
-                strokeColor={color}
-                strokeWidth={4}
-                tappable
-                onPress={() => onPressFeature(feature)}
-              />
-            );
-          case 'Polygon':
-            return (
-              <React.Fragment key={feature.id}>
-                <Polygon
-                  coordinates={coords}
-                  strokeColor={color}
-                  fillColor={withAlpha(color, 0.25)}
-                  strokeWidth={3}
-                  tappable
-                  onPress={() => onPressFeature(feature)}
-                />
-                <Marker
-                  coordinate={geometryCenter(feature.geometry)}
-                  pinColor={color}
-                  title={feature.name}
-                  onCalloutPress={() => onPressFeature(feature)}
-                />
-              </React.Fragment>
-            );
-        }
-      })}
-    </>
+  const handlePress = (event: { nativeEvent: { features: GeoJSON.Feature[] } }) => {
+    const pressedId = event.nativeEvent.features[0]?.properties?.[FEATURE_ID_KEY];
+    if (typeof pressedId !== 'string') return;
+    const feature = features.find((f) => f.id === pressedId);
+    if (feature) {
+      onPressFeature(feature);
+    }
+  };
+
+  return (
+    <GeoJSONSource id="features" data={collection} onPress={handlePress}>
+      {/* Area fills */}
+      <Layer
+        type="fill"
+        id="feature-fills"
+        filter={['==', ['geometry-type'], 'Polygon']}
+        paint={{
+          'fill-color': ['get', 'color'],
+          'fill-opacity': 0.3,
+        }}
+      />
+      {/* Area outlines and walked paths */}
+      <Layer
+        type="line"
+        id="feature-lines"
+        filter={['!=', ['geometry-type'], 'Point']}
+        paint={{
+          'line-color': ['get', 'color'],
+          'line-width': 3,
+        }}
+      />
+      {/* Pins */}
+      <Layer
+        type="circle"
+        id="feature-points"
+        filter={['==', ['geometry-type'], 'Point']}
+        paint={{
+          'circle-color': ['get', 'color'],
+          'circle-radius': 9,
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 2.5,
+        }}
+      />
+    </GeoJSONSource>
   );
 }
