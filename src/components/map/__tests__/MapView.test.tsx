@@ -79,8 +79,17 @@ vi.mock('../../../hooks', () => ({
     latitude: null,
     longitude: null,
     getCurrentPosition: vi.fn(),
+    getBestPosition: vi.fn(),
+    startWatching: vi.fn(),
+    stopWatching: vi.fn(),
     isLoading: false,
     error: null,
+  }),
+  useWakeLock: () => ({
+    isSupported: false,
+    isActive: false,
+    request: vi.fn().mockResolvedValue(false),
+    release: vi.fn().mockResolvedValue(undefined),
   }),
 }));
 

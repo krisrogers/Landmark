@@ -1,11 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import { useMapStore, useFeatureStore } from '@/store';
 import { createPointGeometry, createLineGeometry, createPolygonGeometry } from '@/services/geo';
-import { useGeolocation } from '@/hooks';
+import { useGeolocation, useWakeLock } from '@/hooks';
 import { useNavigate } from 'react-router-dom';
 
 export function DrawingTools() {
@@ -142,33 +142,53 @@ interface DrawingToolbarProps {
 
 export function DrawingToolbar(_props: DrawingToolbarProps) {
   const { drawingMode, setDrawingMode } = useMapStore();
-  const { latitude, longitude, getCurrentPosition, isLoading } = useGeolocation();
+  const { getBestPosition } = useGeolocation();
+  const { request: requestWakeLock, release: releaseWakeLock } = useWakeLock();
   const { createFeature } = useFeatureStore();
   const navigate = useNavigate();
 
+  // Live accuracy (metres) shown while a GPS fix is settling; null when idle.
+  const [captureAccuracy, setCaptureAccuracy] = useState<number | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+
   const handleAddPointAtLocation = async () => {
+    if (isCapturing) return;
+
+    setIsCapturing(true);
+    setCaptureAccuracy(null);
+    // Keep the screen (and GPS) awake while the fix settles.
+    await requestWakeLock();
+
     try {
-      let lat = latitude;
-      let lng = longitude;
+      // Watch briefly and keep the most accurate fix rather than the first
+      // (often coarse) reading. Surface live accuracy so the field user can
+      // see the fix tightening before the point is saved.
+      const position = await getBestPosition({
+        desiredAccuracy: 10,
+        maxWait: 15000,
+        onProgress: (p) => setCaptureAccuracy(p.coords.accuracy ?? null),
+      });
 
-      if (!lat || !lng) {
-        const position = await getCurrentPosition();
-        lat = position.coords.latitude;
-        lng = position.coords.longitude;
-      }
+      const { latitude, longitude, accuracy } = position.coords;
 
-      if (lat && lng) {
-        const feature = await createFeature({
-          name: 'New Point',
-          geometryType: 'Point',
-          geometry: createPointGeometry(lng, lat),
-          tags: [],
-        });
+      const feature = await createFeature({
+        name: 'New Point',
+        geometryType: 'Point',
+        geometry: createPointGeometry(longitude, latitude),
+        tags: [],
+        properties: {
+          gpsAccuracy: accuracy ?? null,
+          capturedAt: position.timestamp ?? null,
+        },
+      });
 
-        navigate(`/feature/${feature.id}?edit=true`);
-      }
+      navigate(`/feature/${feature.id}?edit=true`);
     } catch (err) {
       console.error('Failed to get location:', err);
+    } finally {
+      await releaseWakeLock();
+      setIsCapturing(false);
+      setCaptureAccuracy(null);
     }
   };
 
@@ -192,14 +212,27 @@ export function DrawingToolbar(_props: DrawingToolbarProps) {
       <div className="flex gap-2 bg-white rounded-full shadow-lg p-1">
         <button
           onClick={handleAddPointAtLocation}
-          disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white font-medium rounded-full hover:bg-primary-700 transition-colors min-h-touch"
+          disabled={isCapturing}
+          className={`flex items-center gap-2 px-4 py-2 bg-primary-600 text-white font-medium rounded-full hover:bg-primary-700 transition-colors min-h-touch ${
+            isCapturing ? 'opacity-90 cursor-wait' : ''
+          }`}
           title="Add point at current location"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Drop Point
+          {isCapturing ? (
+            <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          )}
+          {isCapturing
+            ? captureAccuracy != null
+              ? `Locating… ±${Math.round(captureAccuracy)} m`
+              : 'Locating…'
+            : 'Drop Point'}
         </button>
 
         <button
