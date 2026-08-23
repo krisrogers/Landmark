@@ -1,261 +1,203 @@
-# Landmark — V1 Scope
+# Landmark — V2 Scope
 
 ## Purpose
 
-Landmark is an offline-first field notebook and land-planning system.
-It allows a single user to mark places, record observations and measurements, and plan interventions over time, directly in the field or at a desk, using the same codebase on phone and web.
+Landmark is an offline-first **homestead stewardship** system.
 
-Landmark prioritises:
+It began as a field notebook for marking places on land. V2 broadens that intent: the
+things you steward on a property are not only *places* — they are also *assets* (a tractor,
+a house, a mob of sheep), and what ties them together is the **work** you plan and carry out
+over time. Landmark lets a single user mark places and assets, hang tasks and reminders on
+them, and see — on a map or in a list — what needs attention across the whole property.
+
+Landmark still prioritises:
 
 - **Field usability**
 - **Longevity of data**
 - **Conceptual clarity over feature breadth**
+
+The guiding image is unchanged in spirit, only wider in scope: *walk the land, mark what
+matters, and never rely on memory for what you saw or what still needs doing.*
 
 ---
 
 ## Core Design Principles
 
 1. **Offline-first**: all core functionality works without connectivity
-2. **Local-first**: no accounts, no cloud, no sync in V1
-3. **Feature-centric**: everything attaches to a place on land
-4. **Same codebase**: Android + Web (PWA-style)
-5. **Basemap as context, not truth**
+2. **Local-first**: no accounts, no cloud, no sync in V2
+3. **Same codebase**: Android + Web (PWA-style)
+4. **Basemap as context, not truth**
+5. **Unify the verbs, not the nouns** — Places and Assets stay distinct types, but they
+   share one spine of stewardship behaviours (tasks, reminders, tags, photos, notes, history).
+6. **Prefer tags over rigid classifiers** — anything a flexible tag can express (condition,
+   intent, grouping, "projects") is a tag, not a hard-coded concept.
+7. **The task is the protagonist** — planning and execution are task-centric; places and
+   assets are what tasks hang from.
 
 ---
 
 ## Core Concepts
 
-### 1. Feature
+### 1. Place
 
-A Feature represents a place on land.
+A fixed location or area on the land. Stored as GeoJSON.
 
 - **Geometry**: Point, Line, or Polygon
-- Stored as GeoJSON
+- **Captured by**: dropping a point at your GPS location, **walking a boundary** with GPS
+  (track → polygon), or drawing on the map (desk planning)
 
-Examples:
-- Tree
-- Swale
-- Fence line
-- Wet patch
-- Zone boundary
-- Planting row
+Examples: a dam, a felling site, a boundary fence, a permaculture/syntropic zone, a paddock.
 
-Every other object in Landmark attaches to a Feature.
+A Place's location is *fixed* — it is a spot or shape on the land.
 
----
+### 2. Asset
 
-### 2. Observation
+A discrete thing you own and maintain.
 
-A timestamped record of what is noticed.
+- Has an **optional location** that **can change** — either a map pin or "at a Place"
+  (e.g. the sheep mob is *in* the North Paddock; the tractor is *at* the Machinery Shed).
+- **Its tasks travel with it.** Move the asset and its tasks move too — they are bound to the
+  asset, not to a coordinate. This is the entire reason Assets exist as their own type.
 
-- Text notes
-- Tags
-- Photos
-- Voice notes (stored as media)
+Examples: tractor, house, water pump, a mob of sheep.
 
-Observations are immutable records of state or perception.
+### 3. Task
 
----
+The protagonist. A unit of work or intent.
 
-### 3. Measurement
+- Attaches to a **Place**, an **Asset**, a **map pin**, or **nothing** (a location-less job).
+- **Reminder date** — an optional "remind me by" date (deliberately *not* a hard deadline).
+- **Recurrence** — optional, a **fixed interval** in V2 (e.g. every 12 months). Seasonal /
+  around-a-date recurrence is deferred (see below).
+- **Tags**, a **photo**, **notes**.
+- **Done state** that records *when* it was completed. Completing a recurring task schedules
+  the next occurrence.
 
-A structured observation with units.
+### 4. Tag
 
-- Metric (string)
-- Value (number)
-- Unit
-- Method: estimated / measured / derived
-- Optional accuracy or confidence
+A flexible, user-defined label. The primary grouping and classification mechanism.
 
-Measurements do not assume domain-specific meaning.
+- A thing or task may carry any number of tags.
+- **Condition is a tag** (`needs-repair`, `service-soon`) — there is no separate status field.
+- **A "project" is a tag** (`winter-prep`, `new-shed`) that groups tasks across many places
+  and assets.
+- Tags are how you build findable working sets ("show me everything tagged `fell`").
 
----
+### 5. Reminder
 
-### 4. Task
+A date on a task, surfaced when it comes due.
 
-A future or ongoing action tied to a Feature.
+- Can be **snoozed** (pushed out) or **dismissed** (cleared without completing the task).
+- Recurring tasks generate their next reminder on completion.
 
-- Title
-- Status: planned / active / done / abandoned
-- Optional priority and due date
+### 6. Media
 
-Tasks represent intent, not automation.
+Photos attached to things and tasks. Voice notes are deferred.
 
----
+### 7. Measurement (lightweight)
 
-### 5. Template
+Optional structured values with units (engine hours, tank level, canopy width). Retained from
+V1 but no longer central; a Measurement is just another dated entry in a thing's history.
 
-A reusable capture schema.
+### 8. History / Timeline (derived)
 
-- Defines default tags
-- Defines measurement fields
-- Suggests common tasks
-- User-editable JSON (not hard-coded forms)
-
-Templates make Landmark adaptable to:
-- Permaculture
-- Syntropics
-- Forestry
-- General land management
+Each Place and Asset shows a chronological history — but it is **assembled**, not stored as its
+own object. It is composed of: dated notes, added photos, recorded measurements, condition
+(tag) changes, and completed tasks. This preserves the "come back a year later and understand
+it" promise with fewer core concepts.
 
 ---
 
-## Functional Scope (V1)
+## Views
 
-### 1. Map & Navigation
-
-- Pan and zoom map
-- Current GPS location with accuracy circle
-- Display Features (points / lines / polygons)
-- Select Feature from map
-- Toggle Feature visibility by type or tag
-
-Basemap is always visually subordinate to Features.
-
----
-
-### 2. Basemaps
-
-#### Online
-
-When online, Landmark can display a background basemap:
-- Satellite imagery
-- Street / reference map
-
-Basemaps are configurable and optional.
-
-#### Offline
-
-When offline:
-- Landmark continues to function fully
-- Features, GPS, drawing tools remain usable
-- Basemap may be blank or minimally cached
-
-No managed offline basemap packs in V1.
+- **Map** — the home screen. Shows Places and *located* Assets as markers. Filter by **tag**
+  and by **time** ("what's due in the next 30 days"). Answers *what needs attention, and where*.
+- **Due** — everything coming up or overdue across the whole homestead. **Group by Date, Tag,
+  or Place.** Snooze or complete inline.
+- **Things** — browse all Places and Assets; filter by tag.
+- **Detail** — a Place or Asset with its identity, location, tags, open tasks, and derived
+  history. Add tasks, notes, photos, measurements from here.
+- **Settings** — preferences, basemaps, export/import.
 
 ---
 
-### 3. Feature Capture (Offline)
+## Feature Capture (Offline)
 
 - Add Point via GPS
-- Add Line / Polygon via tap-to-draw
-- Select Template at creation
-- Auto timestamp and metadata
-- Attach:
-  - Notes
-  - Tags
-  - Photos
-  - Voice notes
+- **Walk an area** — trace a boundary by walking it with GPS (track → polygon)
+- Draw on map (tap-to-place, for desk planning)
+- Add an Asset (locate now or later; place as a pin or "at a Place")
+- Quick Task (attach to anything, or nothing)
 
-Fast capture is prioritised (≤2 taps to save).
-
----
-
-### 4. Feature Detail View
-
-Each Feature has a single timeline containing:
-- Observations
-- Measurements
-- Tasks
-
-From this view:
-- Add observation
-- Add measurement
-- Create task from observation
-
-Timeline is chronological and append-only.
-
----
-
-### 5. Measurements (V1)
-
-Built-in support for:
-- Distance (between points)
-- Area (polygon)
-- Simple numeric measurements (e.g. depth, diameter, flow estimate)
-
-Measurements are generic and extensible via Templates.
-
----
-
-### 6. Tasks
-
-- Create task linked to Feature
-- Update status
-- Filter tasks by:
-  - Status
-  - Tag
-  - Feature type
-
-No reminders, automation, or scheduling logic in V1.
-
----
-
-### 7. Templates
-
-Initial bundled templates:
-- Generic Feature
-- Tree
-- Row / planting line
-- Water point
-- Soil pit
-- Weed patch
-
-Templates:
-- Live locally
-- Are editable
-- Do not require code changes to extend
+Fast capture remains a priority.
 
 ---
 
 ## Data & Storage
 
-### Local Storage Only
+### Local storage only
 
 - One local project per device
-- No accounts
-- No network dependency
+- No accounts, no network dependency
 
-### Storage Model
+### Storage model (direction)
 
 - Local SQLite-backed data store
-- Geometry stored as GeoJSON
-- Media stored locally and referenced by URI
+- `places` (geometry as GeoJSON) and `assets` (optional location: pin or place reference) as
+  distinct tables sharing the stewardship spine
+- `tasks` with a **polymorphic subject** (place / asset / standalone location), reminder date,
+  recurrence interval, done/completed-at
+- `tags` + `taggings` (many-to-many across places, assets, tasks)
+- `media`, `measurements`, and dated `notes` referencing a place/asset/task
+- History is a query over the above, not a table
+- Migration path: V1's single `features` table splits into `places` + `assets`, and the V1
+  `tasks`/`observations`/`measurements` scaffolding is reshaped around the new spine
 
-### Import / Export
+### Import / export
 
-- Export full project as a file (data + media)
-- Import to replace or merge project
-
-This provides manual continuity between devices.
+- Export the full project as a file (data + media)
+- Import to replace or merge
 
 ---
 
 ## Platforms
 
-### Mobile
-
-- Android
-- GPS-aware
-- Optimised for one-handed field use
-
-### Web
-
-- Same codebase
-- Offline-capable
-- Optimised for planning, filtering, review
+- **Mobile (Android)** — GPS-aware, one-handed field use
+- **Web** — same codebase, offline-capable, optimised for planning and review
 
 ---
 
-## Explicitly Out of Scope (V1)
+## Deferred (wanted, but not V2)
 
-- Cloud sync
-- Multi-user collaboration
-- Conflict resolution
-- True offline basemap packs (MBTiles)
-- Terrain, contour, or DEM layers
-- Automation or recommendations
-- AI features
+- **Seasonal / around-a-date recurrence** (e.g. "every spring", shearing windows) — V2 ships
+  fixed-interval recurrence only
+- **Voice notes**
+- **Asset containment beyond "located at a Place"** (nesting hierarchies)
+- **Walk-to-trace refinements** (pause/resume, drift smoothing)
+
+## Explicitly Out of Scope (V2)
+
+- **Consumables / inventory** (feed, seed, fuel, spare parts) — quantities and depletion do not
+  fit the located-thing + task model; keeping them out preserves coherence
+- Cloud sync, multi-user, conflict resolution
+- Managed offline basemap packs (MBTiles), terrain / contour / DEM layers
+- Automation, recommendations, AI features
+- Financial / cost tracking
+
+---
+
+## What changed from V1
+
+- **Feature → Place + Asset.** The single "everything is a place on land" spine splits into two
+  nouns; location becomes an optional, movable attribute of an Asset.
+- **Task is now first-class** and can attach to a Place, an Asset, a map pin, or nothing.
+- **Reminders** (with snooze/dismiss) and **fixed-interval recurrence** are in scope — V1
+  explicitly excluded reminders and scheduling.
+- **Condition and "projects" are tags**, not new concepts.
+- **Observation** (as a formal immutable object) and heavy **Template** schemas retire; notes,
+  tags and a **derived history** cover their ground with fewer moving parts.
+- **New primary views**: a temporal/spatial **Map**, a cross-homestead **Due** list, and a
+  **Things** browser.
 
 ---
 
@@ -270,6 +212,8 @@ This provides manual continuity between devices.
 
 ## Success Test
 
-Landmark succeeds if:
+Landmark V2 succeeds if:
 
-> You can walk the land, drop a marker, add a note, and come back a year later and still understand exactly what you saw and intended — without relying on memory, signal, or external systems.
+> You can walk the land, mark a place or an asset, note what you see and what needs doing —
+> and come back later knowing, at a glance, exactly what still needs attention and where,
+> without relying on memory, signal, or external systems.
