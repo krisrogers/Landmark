@@ -4,6 +4,8 @@ import { getDatabase } from './services/database';
 import { LoadingOverlay } from './components/common';
 import { MapPage } from './pages/MapPage';
 import { FeaturePage } from './pages/FeaturePage';
+import { DuePage } from './pages/DuePage';
+import { ThingsPage } from './pages/ThingsPage';
 import { TasksPage } from './pages/TasksPage';
 import { TemplatesPage } from './pages/TemplatesPage';
 import { ExportPage } from './pages/ExportPage';
@@ -70,6 +72,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<MapPage />} />
           <Route path="/feature/:id" element={<FeaturePage />} />
+          <Route path="/due" element={<DuePage />} />
+          <Route path="/things" element={<ThingsPage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/templates" element={<TemplatesPage />} />
           <Route path="/export" element={<ExportPage />} />
