@@ -23,7 +23,8 @@ beforeAll(async () => {
   const wasmBinary = fs.readFileSync(
     path.resolve(process.cwd(), 'node_modules/sql.js/dist/sql-wasm.wasm')
   );
-  SQL = await initSqlJs({ wasmBinary });
+  // sql.js accepts `wasmBinary` at runtime but its types omit it.
+  SQL = await initSqlJs({ wasmBinary } as unknown as Parameters<typeof initSqlJs>[0]);
 });
 
 /** Minimal DatabaseService backed by an in-memory sql.js database, for tests. */

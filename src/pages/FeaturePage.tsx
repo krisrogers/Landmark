@@ -138,7 +138,7 @@ export function FeaturePage() {
           </button>
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-semibold text-stone-900 truncate">{feature.name}</h1>
-            <p className="text-sm text-stone-500">{feature.geometryType} • {geometryInfo}</p>
+            <p className="text-sm text-stone-500">Place · {feature.geometryType} · {geometryInfo}</p>
           </div>
           <button
             onClick={() => setShowEditModal(true)}

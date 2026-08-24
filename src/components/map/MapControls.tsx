@@ -1,13 +1,11 @@
 import { useMap } from 'react-leaflet';
 import { useMapStore } from '@/store';
 import { useGeolocation } from '@/hooks';
-import { DrawingToolbar } from './DrawingTools';
 
 export function MapControls() {
   return (
     <>
       <FilterButton />
-      <DrawingToolbar onAddPoint={() => {}} />
     </>
   );
 }

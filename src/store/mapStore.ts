@@ -15,6 +15,10 @@ interface MapState {
   visibleGeometryTypes: Set<string>;
   visibleTags: Set<string>;
 
+  // Walk-to-trace recording ([lat, lng] points)
+  isWalking: boolean;
+  walkPoints: [number, number][];
+
   // Actions
   setCenter: (center: [number, number]) => void;
   setZoom: (zoom: number) => void;
@@ -27,6 +31,9 @@ interface MapState {
   toggleGeometryType: (type: string) => void;
   toggleTag: (tag: string) => void;
   resetFilters: () => void;
+  startWalk: () => void;
+  addWalkPoint: (pt: [number, number]) => void;
+  clearWalk: () => void;
 }
 
 export const useMapStore = create<MapState>()(
@@ -41,6 +48,8 @@ export const useMapStore = create<MapState>()(
       gpsError: null,
       visibleGeometryTypes: new Set(['Point', 'LineString', 'Polygon']),
       visibleTags: new Set(),
+      isWalking: false,
+      walkPoints: [],
 
       setCenter: (center) => set({ center }),
       setZoom: (zoom) => set({ zoom }),
@@ -78,6 +87,20 @@ export const useMapStore = create<MapState>()(
           visibleGeometryTypes: new Set(['Point', 'LineString', 'Polygon']),
           visibleTags: new Set(),
         }),
+
+      startWalk: () => set({ isWalking: true, walkPoints: [] }),
+
+      addWalkPoint: (pt) =>
+        set((state) => {
+          const last = state.walkPoints[state.walkPoints.length - 1];
+          // Skip near-duplicate points (< ~1e-6 deg) to avoid GPS jitter buildup.
+          if (last && Math.abs(last[0] - pt[0]) < 1e-6 && Math.abs(last[1] - pt[1]) < 1e-6) {
+            return state;
+          }
+          return { walkPoints: [...state.walkPoints, pt] };
+        }),
+
+      clearWalk: () => set({ isWalking: false, walkPoints: [] }),
     }),
     {
       name: 'landmark-map-store',

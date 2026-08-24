@@ -44,8 +44,9 @@ const navItems = [
 export function Navigation() {
   const location = useLocation();
 
-  // Hide navigation on feature detail page
-  if (location.pathname.startsWith('/feature/')) {
+  // Hide navigation on full-screen detail and editor pages
+  const hideOn = ['/feature/', '/asset/', '/task/'];
+  if (hideOn.some((p) => location.pathname.startsWith(p))) {
     return null;
   }
 

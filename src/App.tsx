@@ -6,6 +6,9 @@ import { MapPage } from './pages/MapPage';
 import { FeaturePage } from './pages/FeaturePage';
 import { DuePage } from './pages/DuePage';
 import { ThingsPage } from './pages/ThingsPage';
+import { AssetPage } from './pages/AssetPage';
+import { AssetEditorPage } from './pages/AssetEditorPage';
+import { TaskEditorPage } from './pages/TaskEditorPage';
 import { TasksPage } from './pages/TasksPage';
 import { TemplatesPage } from './pages/TemplatesPage';
 import { ExportPage } from './pages/ExportPage';
@@ -74,6 +77,9 @@ export default function App() {
           <Route path="/feature/:id" element={<FeaturePage />} />
           <Route path="/due" element={<DuePage />} />
           <Route path="/things" element={<ThingsPage />} />
+          <Route path="/asset/new" element={<AssetEditorPage />} />
+          <Route path="/asset/:id" element={<AssetPage />} />
+          <Route path="/task/new" element={<TaskEditorPage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/templates" element={<TemplatesPage />} />
           <Route path="/export" element={<ExportPage />} />

@@ -36,7 +36,20 @@ export function ThingsPage() {
   return (
     <div className="h-full flex flex-col bg-stone-50">
       <header className="bg-white border-b border-stone-200 px-4 pt-3 pb-2 safe-top">
-        <h1 className="text-2xl font-bold text-stone-900 tracking-tight">Things</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-stone-900 tracking-tight">Things</h1>
+          {tab === 'assets' && (
+            <button
+              onClick={() => navigate('/asset/new')}
+              className="flex items-center gap-1 text-primary-700 text-sm font-bold"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
+              </svg>
+              Add asset
+            </button>
+          )}
+        </div>
         <div className="flex bg-stone-100 rounded-lg p-0.5 mt-3 w-fit">
           {(['places', 'assets'] as Tab[]).map((t) => (
             <button
@@ -88,7 +101,11 @@ export function ThingsPage() {
         ) : (
           <div className="divide-y divide-stone-100">
             {assets.map((a) => (
-              <div key={a.id} className="w-full flex items-center gap-3 px-4 py-3.5 bg-white">
+              <button
+                key={a.id}
+                onClick={() => navigate(`/asset/${a.id}`)}
+                className="w-full flex items-center gap-3 px-4 py-3.5 bg-white text-left"
+              >
                 <div className="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center flex-none">
                   <AssetIcon />
                 </div>
@@ -99,7 +116,8 @@ export function ThingsPage() {
                     {a.tags.length > 0 && ` · ${a.tags.join(', ')}`}
                   </p>
                 </div>
-              </div>
+                <ChevronIcon />
+              </button>
             ))}
           </div>
         )}
