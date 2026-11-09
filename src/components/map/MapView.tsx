@@ -16,6 +16,7 @@ import { WalkRecorder } from './WalkRecorder';
 import { CaptureControls } from './CaptureControls';
 import { BasemapSelector } from './BasemapSelector';
 import { MapControls, GpsControlButton } from './MapControls';
+import { GpsStatus } from './GpsStatus';
 
 // Fix Leaflet default icon issue
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
@@ -181,6 +182,7 @@ export function MapView() {
       <MapControls />
       <BasemapSelector />
       <CaptureControls />
+      <GpsStatus />
     </div>
   );
 }

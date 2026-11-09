@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 
 export type BasemapType = 'osm' | 'satellite' | 'none';
 export type DrawingMode = 'none' | 'point' | 'line' | 'polygon';
+export type GpsStatus = 'idle' | 'locating' | 'locked' | 'error';
 
 // Shown before we know where the user is: a world overview, not blue ocean.
 export const WORLD_CENTER: [number, number] = [20, 0];
@@ -16,6 +17,8 @@ interface MapState {
   showGpsLocation: boolean;
   gpsPosition: GeolocationPosition | null;
   gpsError: string | null;
+  gpsStatus: GpsStatus;
+  gpsAccuracy: number | null;
   visibleGeometryTypes: Set<string>;
   visibleTags: Set<string>;
 
@@ -34,6 +37,7 @@ interface MapState {
   setDrawingMode: (mode: DrawingMode) => void;
   setGpsPosition: (position: GeolocationPosition | null) => void;
   setGpsError: (error: string | null) => void;
+  beginGpsRequest: () => void;
   toggleGpsLocation: () => void;
   toggleGeometryType: (type: string) => void;
   toggleTag: (tag: string) => void;
@@ -54,6 +58,8 @@ export const useMapStore = create<MapState>()(
       showGpsLocation: true,
       gpsPosition: null,
       gpsError: null,
+      gpsStatus: 'idle',
+      gpsAccuracy: null,
       visibleGeometryTypes: new Set(['Point', 'LineString', 'Polygon']),
       visibleTags: new Set(),
       isWalking: false,
@@ -65,8 +71,15 @@ export const useMapStore = create<MapState>()(
       setView: (center, zoom) => set({ center, zoom }),
       setBasemap: (basemap) => set({ basemap }),
       setDrawingMode: (drawingMode) => set({ drawingMode }),
-      setGpsPosition: (gpsPosition) => set({ gpsPosition, gpsError: null }),
-      setGpsError: (gpsError) => set({ gpsError }),
+      setGpsPosition: (gpsPosition) =>
+        set({
+          gpsPosition,
+          gpsError: null,
+          gpsStatus: 'locked',
+          gpsAccuracy: gpsPosition?.coords.accuracy ?? null,
+        }),
+      setGpsError: (gpsError) => set({ gpsError, gpsStatus: gpsError ? 'error' : 'idle' }),
+      beginGpsRequest: () => set({ gpsStatus: 'locating', gpsError: null }),
       toggleGpsLocation: () => set((state) => ({ showGpsLocation: !state.showGpsLocation })),
 
       toggleGeometryType: (type) =>

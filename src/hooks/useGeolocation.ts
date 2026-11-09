@@ -32,10 +32,11 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
     isWatching: false,
   });
 
-  const { setGpsPosition, setGpsError } = useMapStore();
+  const { setGpsPosition, setGpsError, beginGpsRequest } = useMapStore();
 
   const getCurrentPosition = useCallback(async () => {
     setState((s) => ({ ...s, isLoading: true, error: null }));
+    beginGpsRequest();
 
     try {
       const position = await Geolocation.getCurrentPosition({
@@ -65,12 +66,13 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
       setGpsError(errorMessage);
       throw err;
     }
-  }, [enableHighAccuracy, timeout, maximumAge, setGpsPosition, setGpsError]);
+  }, [enableHighAccuracy, timeout, maximumAge, setGpsPosition, setGpsError, beginGpsRequest]);
 
   const startWatching = useCallback(async () => {
     if (state.isWatching) return;
 
     setState((s) => ({ ...s, isWatching: true, error: null }));
+    beginGpsRequest();
 
     try {
       await Geolocation.watchPosition(
@@ -99,7 +101,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
       }));
       setGpsError(errorMessage);
     }
-  }, [state.isWatching, enableHighAccuracy, timeout, maximumAge, setGpsPosition, setGpsError]);
+  }, [state.isWatching, enableHighAccuracy, timeout, maximumAge, setGpsPosition, setGpsError, beginGpsRequest]);
 
   const stopWatching = useCallback(async () => {
     await Geolocation.clearWatch({ id: '' });

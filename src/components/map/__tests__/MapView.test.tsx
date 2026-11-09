@@ -94,6 +94,8 @@ vi.mock('../../../store', () => ({
     drawingMode: 'none',
     showGpsLocation: false,
     gpsPosition: null,
+    gpsStatus: 'idle',
+    gpsAccuracy: null,
     visibleGeometryTypes: new Set(['Point', 'LineString', 'Polygon']),
     visibleTags: new Set(),
     isWalking: false,
@@ -110,6 +112,7 @@ vi.mock('../../../store', () => ({
     addWalkPoint: vi.fn(),
     clearWalk: vi.fn(),
     setLocated: vi.fn(),
+    beginGpsRequest: vi.fn(),
   }),
   useFeatureStore: () => ({
     createFeature: vi.fn(),

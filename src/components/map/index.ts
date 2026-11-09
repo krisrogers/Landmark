@@ -5,5 +5,6 @@ export { GpsControl } from './GpsControl';
 export { DrawingTools, DrawingToolbar } from './DrawingTools';
 export { WalkRecorder } from './WalkRecorder';
 export { CaptureControls } from './CaptureControls';
+export { GpsStatus } from './GpsStatus';
 export { BasemapSelector } from './BasemapSelector';
 export { MapControls, GpsControlButton } from './MapControls';
