@@ -4,6 +4,10 @@ import { persist } from 'zustand/middleware';
 export type BasemapType = 'osm' | 'satellite' | 'none';
 export type DrawingMode = 'none' | 'point' | 'line' | 'polygon';
 
+// Shown before we know where the user is: a world overview, not blue ocean.
+export const WORLD_CENTER: [number, number] = [20, 0];
+export const WORLD_ZOOM = 3;
+
 interface MapState {
   center: [number, number]; // [lat, lng]
   zoom: number;
@@ -18,6 +22,9 @@ interface MapState {
   // Walk-to-trace recording ([lat, lng] points)
   isWalking: boolean;
   walkPoints: [number, number][];
+
+  // Whether an initial map location has been established (GPS/IP/manual move).
+  hasLocated: boolean;
 
   // Actions
   setCenter: (center: [number, number]) => void;
@@ -34,13 +41,14 @@ interface MapState {
   startWalk: () => void;
   addWalkPoint: (pt: [number, number]) => void;
   clearWalk: () => void;
+  setLocated: (located: boolean) => void;
 }
 
 export const useMapStore = create<MapState>()(
   persist(
     (set) => ({
-      center: [0, 0],
-      zoom: 13,
+      center: WORLD_CENTER,
+      zoom: WORLD_ZOOM,
       basemap: 'osm',
       drawingMode: 'none',
       showGpsLocation: true,
@@ -50,6 +58,7 @@ export const useMapStore = create<MapState>()(
       visibleTags: new Set(),
       isWalking: false,
       walkPoints: [],
+      hasLocated: false,
 
       setCenter: (center) => set({ center }),
       setZoom: (zoom) => set({ zoom }),
@@ -101,6 +110,8 @@ export const useMapStore = create<MapState>()(
         }),
 
       clearWalk: () => set({ isWalking: false, walkPoints: [] }),
+
+      setLocated: (hasLocated) => set({ hasLocated }),
     }),
     {
       name: 'landmark-map-store',
@@ -108,6 +119,7 @@ export const useMapStore = create<MapState>()(
         center: state.center,
         zoom: state.zoom,
         basemap: state.basemap,
+        hasLocated: state.hasLocated,
       }),
     }
   )

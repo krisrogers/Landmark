@@ -98,8 +98,10 @@ vi.mock('../../../store', () => ({
     visibleTags: new Set(),
     isWalking: false,
     walkPoints: [],
+    hasLocated: true,
     setCenter: vi.fn(),
     setZoom: vi.fn(),
+    setView: vi.fn(),
     setDrawingMode: vi.fn(),
     toggleGpsLocation: vi.fn(),
     resetFilters: vi.fn(),
@@ -107,6 +109,7 @@ vi.mock('../../../store', () => ({
     startWalk: vi.fn(),
     addWalkPoint: vi.fn(),
     clearWalk: vi.fn(),
+    setLocated: vi.fn(),
   }),
   useFeatureStore: () => ({
     createFeature: vi.fn(),

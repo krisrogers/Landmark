@@ -4,9 +4,10 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { differenceInCalendarDays, startOfDay } from 'date-fns';
 
-import { useMapStore, useAssetStore } from '@/store';
+import { useMapStore, useAssetStore, WORLD_CENTER, WORLD_ZOOM } from '@/store';
 import { useFeatures, useDatabase } from '@/hooks';
 import { getDueTasks } from '@/services/database/queries';
+import { getApproxLocation } from '@/services/location';
 import { FeatureLayer } from './FeatureLayer';
 import { AssetLayer, type DueSeverity } from './AssetLayer';
 import { GpsControl } from './GpsControl';
@@ -36,9 +37,8 @@ function MapEvents() {
   return null;
 }
 
-function MapViewUpdater() {
+function MapViewUpdater({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
-  const { center, zoom } = useMapStore();
   const initializedRef = useRef(false);
   useEffect(() => {
     if (!initializedRef.current) {
@@ -46,6 +46,36 @@ function MapViewUpdater() {
       map.setView(center, zoom);
     }
   }, [map, center, zoom]);
+  return null;
+}
+
+/**
+ * On first run (no location established yet) picks a sensible map centre from an
+ * approximate IP lookup — no GPS prompt. Falls back silently to the world view
+ * already shown. Runs once; the GPS button still gives pin-point accuracy.
+ */
+function AutoLocate() {
+  const map = useMap();
+  const { hasLocated, setLocated, setView } = useMapStore();
+  const ranRef = useRef(false);
+
+  useEffect(() => {
+    if (hasLocated || ranRef.current) return;
+    ranRef.current = true;
+    let cancelled = false;
+    (async () => {
+      const loc = await getApproxLocation();
+      if (!cancelled && loc) {
+        map.setView([loc.lat, loc.lng], 12);
+        setView([loc.lat, loc.lng], 12);
+      }
+      if (!cancelled) setLocated(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hasLocated, map, setLocated, setView]);
+
   return null;
 }
 
@@ -112,7 +142,7 @@ function useDueBySubject(): Map<string, DueSeverity> {
 }
 
 export function MapView() {
-  const { center, zoom, basemap } = useMapStore();
+  const { center, zoom, basemap, hasLocated } = useMapStore();
   const { features, isLoading } = useFeatures();
   const { assets, loadAssets } = useAssetStore();
   const dueBySubject = useDueBySubject();
@@ -121,17 +151,23 @@ export function MapView() {
     loadAssets();
   }, [loadAssets]);
 
+  // Until a real location is established, open on a world overview rather than
+  // a persisted null-island/ocean centre.
+  const initialCenter = hasLocated ? center : WORLD_CENTER;
+  const initialZoom = hasLocated ? zoom : WORLD_ZOOM;
+
   return (
     <div className="relative h-full w-full">
       <MapContainer
-        center={center}
-        zoom={zoom}
+        center={initialCenter}
+        zoom={initialZoom}
         zoomControl={false}
         className="h-full w-full"
         attributionControl={true}
       >
         <MapEvents />
-        <MapViewUpdater />
+        <MapViewUpdater center={initialCenter} zoom={initialZoom} />
+        <AutoLocate />
         <ZoomControl position="bottomright" />
         <BasemapLayer type={basemap} />
         <FeatureLayer features={features} isLoading={isLoading} dueBySubject={dueBySubject} />
