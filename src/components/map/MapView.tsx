@@ -163,13 +163,19 @@ export function MapView() {
         center={initialCenter}
         zoom={initialZoom}
         zoomControl={false}
+        minZoom={2}
+        maxBounds={[
+          [-85, -180],
+          [85, 180],
+        ]}
+        maxBoundsViscosity={1}
         className="h-full w-full"
         attributionControl={true}
       >
         <MapEvents />
         <MapViewUpdater center={initialCenter} zoom={initialZoom} />
         <AutoLocate />
-        <ZoomControl position="bottomright" />
+        <ZoomControl position="bottomleft" />
         <BasemapLayer type={basemap} />
         <FeatureLayer features={features} isLoading={isLoading} dueBySubject={dueBySubject} />
         <AssetLayer assets={assets} features={features} dueBySubject={dueBySubject} />
