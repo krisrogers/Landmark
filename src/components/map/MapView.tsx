@@ -80,6 +80,38 @@ function AutoLocate() {
   return null;
 }
 
+/**
+ * Pans to the first precise GPS fix after opening, refining the coarse IP
+ * centre — but only while the user hasn't taken control of the map. The moment
+ * they drag, auto-follow is cancelled so we never yank the view out from under
+ * them.
+ */
+function GpsAutoCenter() {
+  const map = useMap();
+  const { gpsPosition } = useMapStore();
+  const centeredRef = useRef(false);
+  const followRef = useRef(true);
+
+  useEffect(() => {
+    const stopFollowing = () => {
+      followRef.current = false;
+    };
+    map.on('dragstart', stopFollowing);
+    return () => {
+      map.off('dragstart', stopFollowing);
+    };
+  }, [map]);
+
+  useEffect(() => {
+    if (centeredRef.current || !followRef.current || !gpsPosition) return;
+    centeredRef.current = true;
+    const { latitude, longitude } = gpsPosition.coords;
+    map.setView([latitude, longitude], Math.max(map.getZoom(), 16));
+  }, [gpsPosition, map]);
+
+  return null;
+}
+
 interface BasemapLayerProps {
   type: 'osm' | 'satellite' | 'none';
 }
@@ -175,6 +207,7 @@ export function MapView() {
         <MapEvents />
         <MapViewUpdater center={initialCenter} zoom={initialZoom} />
         <AutoLocate />
+        <GpsAutoCenter />
         <ZoomControl position="bottomleft" />
         <BasemapLayer type={basemap} />
         <FeatureLayer features={features} isLoading={isLoading} dueBySubject={dueBySubject} />
