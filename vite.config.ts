@@ -4,10 +4,6 @@ import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
 const basePath = process.env.VITE_BASE_PATH || '/';
-// PR preview deploys are served under /pr/<n>/. There we DON'T want a caching
-// service worker (it hides fresh deploys); a self-destroying SW unregisters any
-// previously installed one and clears its caches, so reloads always show latest.
-const isPreview = basePath.includes('/pr/');
 
 export default defineConfig({
   base: basePath,
@@ -16,7 +12,6 @@ export default defineConfig({
     VitePWA({
       scope: basePath,
       registerType: 'autoUpdate',
-      selfDestroying: isPreview,
       includeAssets: ['favicon.ico', 'icons/*.png', 'templates/*.json'],
       manifest: {
         name: 'Landmark',
@@ -40,20 +35,46 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,wasm}'],
+        // Exclude HTML from precache so navigations are served network-first
+        // (always fresh online) rather than from a stale cached app shell.
+        globPatterns: ['**/*.{js,css,ico,png,svg,woff2,wasm}'],
+        navigateFallback: null,
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/.*tile.*\.png$/,
+            // App shell / page navigations: fresh when online, cache as fallback.
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'app-shell',
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 8 },
+            },
+          },
+          {
+            // JS/CSS/workers/fonts: serve cached fast, refresh in background.
+            urlPattern: ({ request }) =>
+              ['style', 'script', 'worker', 'font'].includes(request.destination),
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'assets' },
+          },
+          {
+            // Basemap tiles (OSM + Esri satellite) — cache for offline use.
+            urlPattern: ({ url }) =>
+              url.hostname.includes('tile') || url.hostname.includes('arcgisonline'),
             handler: 'CacheFirst',
             options: {
               cacheName: 'map-tiles',
               expiration: {
-                maxEntries: 500,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
-              }
-            }
-          }
-        ]
+                maxEntries: 800,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       }
     })
   ],
