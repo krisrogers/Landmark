@@ -122,8 +122,8 @@ function BasemapLayer({ type }: BasemapLayerProps) {
       <TileLayer
         url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
         attribution="Tiles &copy; Esri"
-        maxNativeZoom={19}
-        maxZoom={21}
+        maxNativeZoom={17}
+        maxZoom={19}
       />
     );
   }
@@ -132,7 +132,7 @@ function BasemapLayer({ type }: BasemapLayerProps) {
       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       maxNativeZoom={19}
-      maxZoom={21}
+      maxZoom={19}
     />
   );
 }
@@ -197,7 +197,7 @@ export function MapView() {
         zoom={initialZoom}
         zoomControl={false}
         minZoom={2}
-        maxZoom={21}
+        maxZoom={19}
         maxBounds={[
           [-85, -180],
           [85, 180],
