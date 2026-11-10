@@ -98,7 +98,14 @@ export const useMapStore = create<MapState>()(
           gpsStatus: 'locked',
           gpsAccuracy: gpsPosition?.coords.accuracy ?? null,
         }),
-      setGpsError: (gpsError) => set({ gpsError, gpsStatus: gpsError ? 'error' : 'idle' }),
+      setGpsError: (gpsError) =>
+        set((state) => ({
+          gpsError,
+          // Don't drop a good position just because a later request errored
+          // (e.g. a high-accuracy retry timed out). Only show "error" when we
+          // have no fix at all.
+          gpsStatus: state.gpsPosition ? 'locked' : gpsError ? 'error' : 'idle',
+        })),
       beginGpsRequest: () => set({ gpsStatus: 'locating', gpsError: null }),
       toggleGpsLocation: () => set((state) => ({ showGpsLocation: !state.showGpsLocation })),
 

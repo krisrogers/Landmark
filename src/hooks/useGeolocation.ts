@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Geolocation, type Position } from '@capacitor/geolocation';
 import { isNative } from '@/utils/platform';
 import { useMapStore } from '@/store';
@@ -20,8 +20,8 @@ interface UseGeolocationOptions {
 export function useGeolocation(options: UseGeolocationOptions = {}) {
   const {
     enableHighAccuracy = true,
-    timeout = 10000,
-    maximumAge = 0,
+    timeout = 20000,
+    maximumAge = 5000,
     watch = false,
   } = options;
 
@@ -31,6 +31,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
     isLoading: false,
     isWatching: false,
   });
+  const watchIdRef = useRef<string | null>(null);
 
   const { setGpsPosition, setGpsError, beginGpsRequest } = useMapStore();
 
@@ -75,7 +76,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
     beginGpsRequest();
 
     try {
-      await Geolocation.watchPosition(
+      const id = await Geolocation.watchPosition(
         {
           enableHighAccuracy,
           timeout,
@@ -92,6 +93,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
           }
         }
       );
+      watchIdRef.current = id;
     } catch (err) {
       const errorMessage = getErrorMessage(err);
       setState((s) => ({
@@ -104,7 +106,10 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
   }, [state.isWatching, enableHighAccuracy, timeout, maximumAge, setGpsPosition, setGpsError, beginGpsRequest]);
 
   const stopWatching = useCallback(async () => {
-    await Geolocation.clearWatch({ id: '' });
+    if (watchIdRef.current != null) {
+      await Geolocation.clearWatch({ id: watchIdRef.current });
+      watchIdRef.current = null;
+    }
     setState((s) => ({ ...s, isWatching: false }));
   }, []);
 
