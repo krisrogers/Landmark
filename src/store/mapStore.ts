@@ -128,6 +128,21 @@ export const useMapStore = create<MapState>()(
     }),
     {
       name: 'landmark-map-store',
+      version: 1,
+      // v1 makes satellite the default basemap; flip stores saved before that
+      // (which persisted the old 'osm' default) over to satellite once.
+      migrate: (persisted, version) => {
+        const state = persisted as {
+          center: [number, number];
+          zoom: number;
+          basemap: BasemapType;
+          hasLocated: boolean;
+        };
+        if (version < 1) {
+          return { ...state, basemap: 'satellite' as BasemapType };
+        }
+        return state;
+      },
       partialize: (state) => ({
         center: state.center,
         zoom: state.zoom,
