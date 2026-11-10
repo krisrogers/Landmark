@@ -14,6 +14,7 @@ import { GpsControl } from './GpsControl';
 import { DrawingTools } from './DrawingTools';
 import { WalkRecorder } from './WalkRecorder';
 import { CaptureControls } from './CaptureControls';
+import { MeasureResult } from './MeasureResult';
 import { BasemapSelector } from './BasemapSelector';
 import { MapControls, GpsControlButton } from './MapControls';
 import { GpsStatus } from './GpsStatus';
@@ -223,6 +224,7 @@ export function MapView() {
       <MapControls />
       <BasemapSelector />
       <CaptureControls />
+      <MeasureResult />
       <GpsStatus />
     </div>
   );

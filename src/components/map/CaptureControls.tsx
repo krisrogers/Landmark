@@ -42,9 +42,9 @@ export function CaptureControls() {
     getCurrentPosition().catch(() => {});
   };
 
-  const beginDraw = () => {
+  const beginMeasure = (mode: 'line' | 'polygon') => {
     setSheetOpen(false);
-    setDrawingMode('polygon');
+    setDrawingMode(mode);
   };
 
   const finishWalk = async () => {
@@ -143,14 +143,21 @@ export function CaptureControls() {
             <h2 className="px-4 text-xl font-extrabold tracking-tight text-stone-900">Add to the land</h2>
 
             <p className="px-4 pt-3 pb-1 text-xs font-extrabold text-stone-400 uppercase tracking-wide">
-              Mark a place
+              Measure
             </p>
             <div className="bg-white mx-3 rounded-2xl border border-stone-200 overflow-hidden">
               <SheetOption
-                title="Point here"
-                subtitle="Drop a marker at your GPS location"
-                onClick={pointHere}
-                icon={<PinIcon />}
+                title="Measure distance"
+                subtitle="Tap points to measure a line's length"
+                onClick={() => beginMeasure('line')}
+                icon={<LineIcon />}
+              />
+              <Divider />
+              <SheetOption
+                title="Measure area"
+                subtitle="Tap points to measure an area and perimeter"
+                onClick={() => beginMeasure('polygon')}
+                icon={<AreaIcon />}
               />
               <Divider />
               <SheetOption
@@ -159,12 +166,17 @@ export function CaptureControls() {
                 onClick={beginWalk}
                 icon={<WalkIcon />}
               />
-              <Divider />
+            </div>
+
+            <p className="px-4 pt-4 pb-1 text-xs font-extrabold text-stone-400 uppercase tracking-wide">
+              Mark a place
+            </p>
+            <div className="bg-white mx-3 rounded-2xl border border-stone-200 overflow-hidden">
               <SheetOption
-                title="Draw on map"
-                subtitle="Tap to place points — for planning at a desk"
-                onClick={beginDraw}
-                icon={<DrawIcon />}
+                title="Point here"
+                subtitle="Drop a marker at your GPS location"
+                onClick={pointHere}
+                icon={<PinIcon />}
               />
             </div>
           </div>
@@ -227,10 +239,19 @@ function WalkIcon() {
     </svg>
   );
 }
-function DrawIcon() {
+function LineIcon() {
   return (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 20h9M3 20l1-4L16 4a2.1 2.1 0 013 3L7 19z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 20L20 4" />
+      <circle cx="4" cy="20" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="20" cy="4" r="1.6" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+function AreaIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 8l7-4 7 4v8l-7 4-7-4z" />
     </svg>
   );
 }

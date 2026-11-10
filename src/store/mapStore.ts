@@ -1,9 +1,19 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { FeatureGeometry } from '@/types';
 
 export type BasemapType = 'osm' | 'satellite';
 export type DrawingMode = 'none' | 'point' | 'line' | 'polygon';
 export type GpsStatus = 'idle' | 'locating' | 'locked' | 'error';
+
+/** A just-completed measurement awaiting save or discard. */
+export interface PendingMeasure {
+  geometryType: 'LineString' | 'Polygon';
+  geometry: FeatureGeometry;
+  length?: number; // line length, metres
+  area?: number; // polygon area, m²
+  perimeter?: number; // polygon perimeter, metres
+}
 
 // Shown before we know where the user is: a world overview, not blue ocean.
 export const WORLD_CENTER: [number, number] = [20, 0];
@@ -26,6 +36,9 @@ interface MapState {
   isWalking: boolean;
   walkPoints: [number, number][];
 
+  // A completed measurement awaiting save/discard.
+  pendingMeasure: PendingMeasure | null;
+
   // Whether an initial map location has been established (GPS/IP/manual move).
   hasLocated: boolean;
 
@@ -46,6 +59,7 @@ interface MapState {
   addWalkPoint: (pt: [number, number]) => void;
   clearWalk: () => void;
   setLocated: (located: boolean) => void;
+  setPendingMeasure: (measure: PendingMeasure | null) => void;
 }
 
 export const useMapStore = create<MapState>()(
@@ -65,6 +79,7 @@ export const useMapStore = create<MapState>()(
       isWalking: false,
       walkPoints: [],
       hasLocated: false,
+      pendingMeasure: null,
 
       setCenter: (center) => set({ center }),
       setZoom: (zoom) => set({ zoom }),
@@ -125,6 +140,8 @@ export const useMapStore = create<MapState>()(
       clearWalk: () => set({ isWalking: false, walkPoints: [] }),
 
       setLocated: (hasLocated) => set({ hasLocated }),
+
+      setPendingMeasure: (pendingMeasure) => set({ pendingMeasure }),
     }),
     {
       name: 'landmark-map-store',
