@@ -113,17 +113,17 @@ function GpsAutoCenter() {
 }
 
 interface BasemapLayerProps {
-  type: 'osm' | 'satellite' | 'none';
+  type: 'osm' | 'satellite';
 }
 
 function BasemapLayer({ type }: BasemapLayerProps) {
-  if (type === 'none') return null;
   if (type === 'satellite') {
     return (
       <TileLayer
         url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
         attribution="Tiles &copy; Esri"
-        maxZoom={19}
+        maxNativeZoom={19}
+        maxZoom={21}
       />
     );
   }
@@ -131,7 +131,8 @@ function BasemapLayer({ type }: BasemapLayerProps) {
     <TileLayer
       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-      maxZoom={19}
+      maxNativeZoom={19}
+      maxZoom={21}
     />
   );
 }
@@ -196,6 +197,7 @@ export function MapView() {
         zoom={initialZoom}
         zoomControl={false}
         minZoom={2}
+        maxZoom={21}
         maxBounds={[
           [-85, -180],
           [85, 180],

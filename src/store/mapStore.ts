@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type BasemapType = 'osm' | 'satellite' | 'none';
+export type BasemapType = 'osm' | 'satellite';
 export type DrawingMode = 'none' | 'point' | 'line' | 'polygon';
 export type GpsStatus = 'idle' | 'locating' | 'locked' | 'error';
 
@@ -53,7 +53,7 @@ export const useMapStore = create<MapState>()(
     (set) => ({
       center: WORLD_CENTER,
       zoom: WORLD_ZOOM,
-      basemap: 'osm',
+      basemap: 'satellite',
       drawingMode: 'none',
       showGpsLocation: true,
       gpsPosition: null,

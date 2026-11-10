@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { useMapStore, type BasemapType } from '@/store';
 
 const basemapOptions: { id: BasemapType; label: string; icon: string }[] = [
-  { id: 'osm', label: 'Street', icon: '🗺️' },
   { id: 'satellite', label: 'Satellite', icon: '🛰️' },
-  { id: 'none', label: 'None', icon: '⬜' },
+  { id: 'osm', label: 'Street', icon: '🗺️' },
 ];
 
 export function BasemapSelector() {
