@@ -58,6 +58,7 @@ jobs:
         run: npm run build
         env:
           VITE_BASE_PATH: '/Landmark/'
+          VITE_COMMIT_SHA: ${{ github.sha }}
 
       - name: Copy index.html to 404.html for SPA routing
         run: cp dist/index.html dist/404.html

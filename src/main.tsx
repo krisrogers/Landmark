@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { ToastProvider } from './components/common';
+import { VersionBadge } from './components/VersionBadge';
 import './styles/index.css';
 
 console.log('[main.tsx] Module loaded');
@@ -22,6 +23,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <BrowserRouter basename={basename}>
       <ToastProvider>
         <App />
+        <VersionBadge />
       </ToastProvider>
     </BrowserRouter>
   </React.StrictMode>

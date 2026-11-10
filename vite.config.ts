@@ -1,12 +1,31 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { execSync } from 'node:child_process';
 import path from 'path';
 
 const basePath = process.env.VITE_BASE_PATH || '/';
 
+// Build identity, stamped into the bundle and shown as an on-screen badge so it
+// is obvious which deploy is running after a refresh.
+function commitSha(): string {
+  const explicit = process.env.VITE_COMMIT_SHA || process.env.GITHUB_SHA;
+  if (explicit) return explicit.slice(0, 7);
+  try {
+    return execSync('git rev-parse --short HEAD').toString().trim();
+  } catch {
+    return 'dev';
+  }
+}
+const buildId = commitSha();
+const buildTime = new Date().toISOString();
+
 export default defineConfig({
   base: basePath,
+  define: {
+    __BUILD_ID__: JSON.stringify(buildId),
+    __BUILD_TIME__: JSON.stringify(buildTime),
+  },
   plugins: [
     react(),
     VitePWA({
