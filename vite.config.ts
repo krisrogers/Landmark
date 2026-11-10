@@ -31,6 +31,12 @@ export default defineConfig({
     VitePWA({
       scope: basePath,
       registerType: 'autoUpdate',
+      // Alpha: no service worker. selfDestroying ships a worker that
+      // unregisters any previously installed one and clears its caches, then
+      // registers nothing — so the app behaves like a plain site and reloads
+      // always fetch the latest. Re-enable the PWA (remove this) when the app
+      // is stable enough to want offline caching back.
+      selfDestroying: true,
       includeAssets: ['favicon.ico', 'icons/*.png', 'templates/*.json'],
       manifest: {
         name: 'Landmark',

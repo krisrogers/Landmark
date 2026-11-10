@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { ToastProvider } from './components/common';
 import { VersionBadge } from './components/VersionBadge';
@@ -9,9 +8,10 @@ import './styles/index.css';
 
 console.log('[main.tsx] Module loaded');
 
-// Auto-update the service worker: when a new version is deployed, apply it and
-// reload so the open tab isn't stuck on a stale cached bundle.
-registerSW({ immediate: true });
+// No service worker for the alpha: the PWA is built in self-destroying mode so
+// any previously installed worker is unregistered and its caches cleared. We do
+// NOT register a worker here — the app behaves like a plain site (a normal
+// refresh fetches the latest), avoiding stale-cache headaches while iterating.
 
 // Get base path from Vite config (set via VITE_BASE_PATH env var)
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
