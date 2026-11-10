@@ -1,1 +1,25 @@
-if(!self.define){let e,s={};const i=(i,n)=>(i=new URL(i+".js",n).href,s[i]||new Promise(s=>{if("document"in self){const e=document.createElement("script");e.src=i,e.onload=s,document.head.appendChild(e)}else e=i,importScripts(i),s()}).then(()=>{let e=s[i];if(!e)throw new Error(`Module ${i} didn’t register its module`);return e}));self.define=(n,r)=>{const t=e||("document"in self?document.currentScript.src:"")||location.href;if(s[t])return;let l={};const o=e=>i(e,t),u={module:{uri:t},exports:l,require:o};s[t]=Promise.all(n.map(e=>u[e]||o(e))).then(e=>(r(...e),l))}}define(["./workbox-66610c77"],function(e){"use strict";self.skipWaiting(),e.clientsClaim(),e.precacheAndRoute([{url:"sql-wasm.wasm",revision:"adf3b772bd5b646d050ce90d58b3db23"},{url:"index.html",revision:"1f2be48f5759a01a2035798d1edf0a7c"},{url:"favicon.svg",revision:"28fe4c897d3faafc88fb8e6456912474"},{url:"assets/workbox-window.prod.es5-vqzQaGvo.js",revision:null},{url:"assets/web-CT7et9pQ.js",revision:null},{url:"assets/web-CNzcBfYL.js",revision:null},{url:"assets/spritesheet-DpIxuf5L.svg",revision:null},{url:"assets/index-Dqhvc6n0.css",revision:null},{url:"assets/index-ClVtQEJ0.js",revision:null},{url:"manifest.webmanifest",revision:"cb56d32b93d743df40a54c7cf1c13f29"}],{}),e.cleanupOutdatedCaches(),e.registerRoute(new e.NavigationRoute(e.createHandlerBoundToURL("index.html"))),e.registerRoute(/^https:\/\/.*tile.*\.png$/,new e.CacheFirst({cacheName:"map-tiles",plugins:[new e.ExpirationPlugin({maxEntries:500,maxAgeSeconds:2592e3})]}),"GET")});
+
+self.addEventListener('install', (e) => {
+  self.skipWaiting();
+});
+self.addEventListener('activate', (e) => {
+  self.registration.unregister()
+    .then(() => self.clients.matchAll())
+    .then((clients) => {
+      clients.forEach((client) => {
+        if (client instanceof WindowClient)
+          client.navigate(client.url);
+      });
+      return Promise.resolve();
+    })
+    .then(() => {
+      self.caches.keys().then((cacheNames) => {
+        Promise.all(
+          cacheNames.map((cacheName) => {
+            return self.caches.delete(cacheName);
+          }),
+        );
+      })
+    });
+});
+    
