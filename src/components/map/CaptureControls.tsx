@@ -11,14 +11,22 @@ import {
 
 export function CaptureControls() {
   const navigate = useNavigate();
-  const { drawingMode, setDrawingMode, isWalking, walkPoints, startWalk, clearWalk } = useMapStore();
+  const {
+    drawingMode,
+    setDrawingMode,
+    isWalking,
+    walkPoints,
+    startWalk,
+    clearWalk,
+    captureOpen,
+    setCaptureOpen,
+  } = useMapStore();
   const { createFeature } = useFeatureStore();
-  const { getCurrentPosition, isLoading } = useGeolocation();
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const { getCurrentPosition } = useGeolocation();
   const [busy, setBusy] = useState(false);
 
   const pointHere = async () => {
-    setSheetOpen(false);
+    setCaptureOpen(false);
     setBusy(true);
     try {
       const pos = await getCurrentPosition();
@@ -37,13 +45,13 @@ export function CaptureControls() {
   };
 
   const beginWalk = () => {
-    setSheetOpen(false);
+    setCaptureOpen(false);
     startWalk();
     getCurrentPosition().catch(() => {});
   };
 
   const beginMeasure = (mode: 'line' | 'polygon') => {
-    setSheetOpen(false);
+    setCaptureOpen(false);
     setDrawingMode(mode);
   };
 
@@ -121,23 +129,12 @@ export function CaptureControls() {
     );
   }
 
-  // --- FAB + sheet ---
+  // --- Capture sheet (opened from the bottom toolbar's + button) ---
   return (
     <>
-      <button
-        onClick={() => setSheetOpen(true)}
-        disabled={busy || isLoading}
-        className="absolute bottom-20 right-4 z-[1000] w-14 h-14 rounded-2xl bg-primary-600 text-white shadow-lg flex items-center justify-center active:scale-95 transition-transform"
-        aria-label="Add"
-      >
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={2.4} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
-        </svg>
-      </button>
-
-      {sheetOpen && (
+      {captureOpen && (
         <div className="absolute inset-0 z-[1200]">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setSheetOpen(false)} />
+          <div className="absolute inset-0 bg-black/40" onClick={() => setCaptureOpen(false)} />
           <div className="absolute left-0 right-0 bottom-0 bg-stone-50 rounded-t-3xl shadow-2xl pb-4 animate-slide-up">
             <div className="w-10 h-1.5 rounded-full bg-stone-300 mx-auto my-3" />
             <h2 className="px-4 text-xl font-extrabold tracking-tight text-stone-900">Add to the land</h2>

@@ -39,6 +39,9 @@ interface MapState {
   // A completed measurement awaiting save/discard.
   pendingMeasure: PendingMeasure | null;
 
+  // Whether the capture (+) sheet is open.
+  captureOpen: boolean;
+
   // Whether an initial map location has been established (GPS/IP/manual move).
   hasLocated: boolean;
 
@@ -60,6 +63,7 @@ interface MapState {
   clearWalk: () => void;
   setLocated: (located: boolean) => void;
   setPendingMeasure: (measure: PendingMeasure | null) => void;
+  setCaptureOpen: (open: boolean) => void;
 }
 
 export const useMapStore = create<MapState>()(
@@ -80,6 +84,7 @@ export const useMapStore = create<MapState>()(
       walkPoints: [],
       hasLocated: false,
       pendingMeasure: null,
+      captureOpen: false,
 
       setCenter: (center) => set({ center }),
       setZoom: (zoom) => set({ zoom }),
@@ -142,6 +147,8 @@ export const useMapStore = create<MapState>()(
       setLocated: (hasLocated) => set({ hasLocated }),
 
       setPendingMeasure: (pendingMeasure) => set({ pendingMeasure }),
+
+      setCaptureOpen: (captureOpen) => set({ captureOpen }),
     }),
     {
       name: 'landmark-map-store',

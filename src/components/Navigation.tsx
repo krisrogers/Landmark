@@ -1,4 +1,5 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useMapStore } from '@/store';
 
 const navItems = [
   {
@@ -45,6 +46,8 @@ const navItems = [
 
 export function Navigation() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { setCaptureOpen } = useMapStore();
 
   // Hide navigation on full-screen detail and editor pages
   const hideOn = ['/feature/', '/asset/', '/task/'];
@@ -52,24 +55,42 @@ export function Navigation() {
     return null;
   }
 
+  const openCapture = () => {
+    if (location.pathname !== '/') navigate('/');
+    setCaptureOpen(true);
+  };
+
+  const linkClass = ({ isActive }: { isActive: boolean }) => `
+    flex flex-col items-center justify-center
+    py-2 px-4 min-h-[56px] flex-1
+    transition-colors
+    ${isActive ? 'text-primary-600' : 'text-stone-500 hover:text-stone-700'}
+  `;
+
   return (
     <nav className="bg-white border-t border-stone-200 safe-bottom">
-      <div className="flex justify-around">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) => `
-              flex flex-col items-center justify-center
-              py-2 px-4 min-h-[56px]
-              transition-colors
-              ${isActive ? 'text-primary-600' : 'text-stone-500 hover:text-stone-700'}
-            `}
-          >
-            {item.icon}
-            <span className="text-xs mt-1 font-medium">{item.label}</span>
-          </NavLink>
-        ))}
+      <div className="flex items-center">
+        <NavLink to={navItems[0].path} className={linkClass}>
+          {navItems[0].icon}
+          <span className="text-xs mt-1 font-medium">{navItems[0].label}</span>
+        </NavLink>
+
+        <button
+          onClick={openCapture}
+          aria-label="Add"
+          className="flex-1 flex items-center justify-center min-h-[56px]"
+        >
+          <span className="w-12 h-12 rounded-2xl bg-primary-600 text-white flex items-center justify-center shadow-md active:scale-95 transition-transform">
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={2.4} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
+            </svg>
+          </span>
+        </button>
+
+        <NavLink to={navItems[1].path} className={linkClass}>
+          {navItems[1].icon}
+          <span className="text-xs mt-1 font-medium">{navItems[1].label}</span>
+        </NavLink>
       </div>
     </nav>
   );

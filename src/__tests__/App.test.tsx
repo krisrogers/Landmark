@@ -101,6 +101,7 @@ vi.mock('../store', () => ({
     walkPoints: [],
     hasLocated: true,
     pendingMeasure: null,
+    captureOpen: false,
     setCenter: vi.fn(),
     setZoom: vi.fn(),
     setView: vi.fn(),
@@ -114,6 +115,7 @@ vi.mock('../store', () => ({
     setLocated: vi.fn(),
     beginGpsRequest: vi.fn(),
     setPendingMeasure: vi.fn(),
+    setCaptureOpen: vi.fn(),
   }),
   useFeatureStore: () => ({
     createFeature: vi.fn(),
