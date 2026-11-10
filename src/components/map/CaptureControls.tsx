@@ -167,27 +167,6 @@ export function CaptureControls() {
                 icon={<DrawIcon />}
               />
             </div>
-
-            <p className="px-4 pt-4 pb-1 text-xs font-extrabold text-stone-400 uppercase tracking-wide">
-              Add
-            </p>
-            <div className="bg-white mx-3 rounded-2xl border border-stone-200 overflow-hidden">
-              <SheetOption
-                title="Asset"
-                subtitle="Equipment, buildings, a mob — locate it later"
-                onClick={() => navigate('/asset/new')}
-                icon={<AssetIcon />}
-                tint="sky"
-              />
-              <Divider />
-              <SheetOption
-                title="Quick task"
-                subtitle="A job with a reminder — attach it to anything"
-                onClick={() => navigate('/task/new')}
-                icon={<TaskIcon />}
-                tint="stone"
-              />
-            </div>
           </div>
         </div>
       )}
@@ -252,20 +231,6 @@ function DrawIcon() {
   return (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 20h9M3 20l1-4L16 4a2.1 2.1 0 013 3L7 19z" />
-    </svg>
-  );
-}
-function AssetIcon() {
-  return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-    </svg>
-  );
-}
-function TaskIcon() {
-  return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
     </svg>
   );
 }

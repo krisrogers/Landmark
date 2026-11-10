@@ -199,8 +199,6 @@ describe('App Initialization', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Map')).toBeInTheDocument();
-        expect(screen.getByText('Due')).toBeInTheDocument();
-        expect(screen.getByText('Things')).toBeInTheDocument();
         expect(screen.getByText('Settings')).toBeInTheDocument();
       });
     });

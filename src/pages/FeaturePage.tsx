@@ -192,6 +192,7 @@ export function FeaturePage() {
             </svg>
             Add Measurement
           </button>
+          {/* Add Task hidden for the alpha (Due functionality). Re-enable to bring it back.
           <button
             onClick={() => setShowTaskModal(true)}
             className="flex items-center gap-2 px-3 py-1.5 bg-stone-100 text-stone-700 rounded-full text-sm font-medium hover:bg-stone-200 whitespace-nowrap"
@@ -201,6 +202,7 @@ export function FeaturePage() {
             </svg>
             Add Task
           </button>
+          */}
         </div>
       </div>
 

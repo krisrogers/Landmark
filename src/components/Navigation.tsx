@@ -10,25 +10,27 @@ const navItems = [
       </svg>
     ),
   },
-  {
-    path: '/due',
-    label: 'Due',
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="8.5" strokeWidth={2} />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 7.5V12l3 2" />
-      </svg>
-    ),
-  },
-  {
-    path: '/things',
-    label: 'Things',
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-      </svg>
-    ),
-  },
+  // Due and Things are hidden for the alpha (mapping + measuring focus).
+  // Re-add these entries to bring them back.
+  // {
+  //   path: '/due',
+  //   label: 'Due',
+  //   icon: (
+  //     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  //       <circle cx="12" cy="12" r="8.5" strokeWidth={2} />
+  //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 7.5V12l3 2" />
+  //     </svg>
+  //   ),
+  // },
+  // {
+  //   path: '/things',
+  //   label: 'Things',
+  //   icon: (
+  //     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+  //     </svg>
+  //   ),
+  // },
   {
     path: '/settings',
     label: 'Settings',
