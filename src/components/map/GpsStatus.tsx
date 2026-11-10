@@ -8,7 +8,8 @@ import { useGeolocation } from '@/hooks';
  * rather than silently re-requesting.
  */
 export function GpsStatus() {
-  const { gpsStatus, gpsAccuracy, gpsPosition, gpsError, showGpsLocation } = useMapStore();
+  const { gpsStatus, gpsAccuracy, gpsPosition, gpsError, gpsErrorKind, showGpsLocation } =
+    useMapStore();
   const { getCurrentPosition } = useGeolocation();
   const [expanded, setExpanded] = useState(false);
 
@@ -17,17 +18,25 @@ export function GpsStatus() {
   const retry = () => getCurrentPosition().catch(() => {});
 
   if (gpsStatus === 'locating') {
+    // Still trying (watch active) — no retry prompt; a transient timeout just
+    // reads as a weaker signal rather than a failure.
+    const searching =
+      gpsErrorKind === 'timeout' || gpsErrorKind === 'unavailable'
+        ? 'Weak signal — still searching…'
+        : 'Finding your location…';
     return (
       <Shell>
         <Pill>
           <span className="w-3.5 h-3.5 rounded-full border-2 border-stone-300 border-t-primary-600 animate-spin" />
-          <span className="text-stone-600">Finding your location…</span>
+          <span className="text-stone-600">{searching}</span>
         </Pill>
       </Shell>
     );
   }
 
   if (gpsStatus === 'error') {
+    // Only reached for a terminal error (permission denied), where retrying
+    // (re-prompting) is the right action.
     return (
       <Shell>
         <Pill onClick={retry}>

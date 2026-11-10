@@ -64,7 +64,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
         isLoading: false,
         error: errorMessage,
       }));
-      setGpsError(errorMessage);
+      setGpsError(errorMessage, getErrorKind(err));
       throw err;
     }
   }, [enableHighAccuracy, timeout, maximumAge, setGpsPosition, setGpsError, beginGpsRequest]);
@@ -86,7 +86,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
           if (err) {
             const errorMessage = getErrorMessage(err);
             setState((s) => ({ ...s, error: errorMessage }));
-            setGpsError(errorMessage);
+            setGpsError(errorMessage, getErrorKind(err));
           } else if (position) {
             setState((s) => ({ ...s, position, error: null }));
             setGpsPosition(position as unknown as GeolocationPosition);
@@ -101,7 +101,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
         isWatching: false,
         error: errorMessage,
       }));
-      setGpsError(errorMessage);
+      setGpsError(errorMessage, getErrorKind(err));
     }
   }, [state.isWatching, enableHighAccuracy, timeout, maximumAge, setGpsPosition, setGpsError, beginGpsRequest]);
 
@@ -146,6 +146,19 @@ function getErrorMessage(error: unknown): string {
   }
 
   return 'Unknown geolocation error';
+}
+
+/** Classify a geolocation error so the UI can tell terminal from transient. */
+function getErrorKind(error: unknown): 'denied' | 'timeout' | 'unavailable' | 'unknown' {
+  const code = (error as { code?: number } | null)?.code;
+  if (code === 1) return 'denied';
+  if (code === 2) return 'unavailable';
+  if (code === 3) return 'timeout';
+  const m = getErrorMessage(error).toLowerCase();
+  if (/denied|permission/.test(m)) return 'denied';
+  if (/timeout|timed out/.test(m)) return 'timeout';
+  if (/unavailable|position/.test(m)) return 'unavailable';
+  return 'unknown';
 }
 
 export async function checkGeolocationPermission(): Promise<'granted' | 'denied' | 'prompt'> {

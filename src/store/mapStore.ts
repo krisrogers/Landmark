@@ -5,6 +5,8 @@ import type { FeatureGeometry } from '@/types';
 export type BasemapType = 'osm' | 'satellite';
 export type DrawingMode = 'none' | 'point' | 'line' | 'polygon';
 export type GpsStatus = 'idle' | 'locating' | 'locked' | 'error';
+/** 'denied' is terminal (needs user action); the rest are transient while a watch keeps trying. */
+export type GpsErrorKind = 'denied' | 'timeout' | 'unavailable' | 'unknown';
 
 /** A just-completed measurement awaiting save or discard. */
 export interface PendingMeasure {
@@ -29,6 +31,7 @@ interface MapState {
   gpsError: string | null;
   gpsStatus: GpsStatus;
   gpsAccuracy: number | null;
+  gpsErrorKind: GpsErrorKind | null;
   visibleGeometryTypes: Set<string>;
   visibleTags: Set<string>;
 
@@ -52,7 +55,7 @@ interface MapState {
   setBasemap: (basemap: BasemapType) => void;
   setDrawingMode: (mode: DrawingMode) => void;
   setGpsPosition: (position: GeolocationPosition | null) => void;
-  setGpsError: (error: string | null) => void;
+  setGpsError: (error: string | null, kind?: GpsErrorKind) => void;
   beginGpsRequest: () => void;
   toggleGpsLocation: () => void;
   toggleGeometryType: (type: string) => void;
@@ -78,6 +81,7 @@ export const useMapStore = create<MapState>()(
       gpsError: null,
       gpsStatus: 'idle',
       gpsAccuracy: null,
+      gpsErrorKind: null,
       visibleGeometryTypes: new Set(['Point', 'LineString', 'Polygon']),
       visibleTags: new Set(),
       isWalking: false,
@@ -98,15 +102,22 @@ export const useMapStore = create<MapState>()(
           gpsStatus: 'locked',
           gpsAccuracy: gpsPosition?.coords.accuracy ?? null,
         }),
-      setGpsError: (gpsError) =>
-        set((state) => ({
-          gpsError,
-          // Don't drop a good position just because a later request errored
-          // (e.g. a high-accuracy retry timed out). Only show "error" when we
-          // have no fix at all.
-          gpsStatus: state.gpsPosition ? 'locked' : gpsError ? 'error' : 'idle',
-        })),
-      beginGpsRequest: () => set({ gpsStatus: 'locating', gpsError: null }),
+      setGpsError: (gpsError, kind = 'unknown') =>
+        set((state) => {
+          if (!gpsError) {
+            return {
+              gpsError: null,
+              gpsErrorKind: null,
+              gpsStatus: state.gpsPosition ? 'locked' : 'idle',
+            };
+          }
+          // Permission denied is terminal; everything else is transient while
+          // the watch keeps trying (stay "locating" until we actually get a fix).
+          const status: GpsStatus =
+            kind === 'denied' ? 'error' : state.gpsPosition ? 'locked' : 'locating';
+          return { gpsError, gpsErrorKind: kind, gpsStatus: status };
+        }),
+      beginGpsRequest: () => set({ gpsStatus: 'locating', gpsError: null, gpsErrorKind: null }),
       toggleGpsLocation: () => set((state) => ({ showGpsLocation: !state.showGpsLocation })),
 
       toggleGeometryType: (type) =>

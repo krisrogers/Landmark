@@ -95,6 +95,7 @@ vi.mock('../store', () => ({
     gpsPosition: null,
     gpsStatus: 'idle',
     gpsAccuracy: null,
+    gpsErrorKind: null,
     visibleGeometryTypes: new Set(['Point', 'LineString', 'Polygon']),
     visibleTags: new Set(),
     isWalking: false,
