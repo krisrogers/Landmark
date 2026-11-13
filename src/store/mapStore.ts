@@ -153,9 +153,8 @@ export const useMapStore = create<MapState>()(
       addWalkPoint: (pt) =>
         set((state) => {
           const last = state.walkPoints[state.walkPoints.length - 1];
-          // Only record a point once you've moved ~2m, to avoid a dense trickle
-          // of near-identical GPS points (and the rendering cost that brings).
-          if (last && Math.abs(last[0] - pt[0]) < 2e-5 && Math.abs(last[1] - pt[1]) < 2e-5) {
+          // Skip near-duplicate points (< ~1e-6 deg) to avoid GPS jitter buildup.
+          if (last && Math.abs(last[0] - pt[0]) < 1e-6 && Math.abs(last[1] - pt[1]) < 1e-6) {
             return state;
           }
           return { walkPoints: [...state.walkPoints, pt] };
