@@ -2,7 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useFeatureStore, useAIStore } from '@/store';
 import { Button, TextArea, LoadingSpinner } from '@/components/common';
-import { assembleSiteBrief, type SiteBrief } from '@/services/region';
+import {
+  assembleSiteBrief,
+  type SiteBrief,
+  type BriefStep,
+  type BriefStepStatus,
+} from '@/services/region';
 import { getTransport, AdvisorError } from '@/services/advisor';
 import type { Feature } from '@/types';
 import { SiteBriefView } from '@/components/advisor/SiteBriefView';
@@ -23,6 +28,11 @@ export function AdvisorPage() {
   const [advice, setAdvice] = useState('');
   const [phase, setPhase] = useState<Phase>('idle');
   const [error, setError] = useState('');
+  const [steps, setSteps] = useState<Record<BriefStep, BriefStepStatus | undefined>>({
+    Terrain: undefined,
+    Climate: undefined,
+    Soil: undefined,
+  });
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -54,9 +64,13 @@ export function AdvisorPage() {
 
     setError('');
     setAdvice('');
+    setSteps({ Terrain: undefined, Climate: undefined, Soil: undefined });
     setPhase('reading');
     try {
-      const assembled = await assembleSiteBrief(feature, controller.signal);
+      const assembled = await assembleSiteBrief(feature, {
+        signal: controller.signal,
+        onProgress: (step, status) => setSteps((s) => ({ ...s, [step]: status })),
+      });
       if (controller.signal.aborted) return;
       setBrief(assembled);
 
@@ -73,6 +87,11 @@ export function AdvisorPage() {
       setError(err instanceof AdvisorError ? err.message : 'Something went wrong getting advice.');
       setPhase('error');
     }
+  }
+
+  function cancel() {
+    abortRef.current?.abort();
+    setPhase('idle');
   }
 
   const header = (
@@ -148,14 +167,29 @@ export function AdvisorPage() {
           />
         </div>
 
-        <Button onClick={run} isLoading={busy} disabled={busy} className="w-full">
-          {phase === 'done' || phase === 'error' ? 'Get advice again' : 'Get advice'}
-        </Button>
-
-        {busy && (
-          <p className="text-sm text-stone-500 text-center">
-            {phase === 'reading' ? 'Reading the site (terrain, climate, soil)…' : 'Thinking about your site…'}
-          </p>
+        {busy ? (
+          <div className="space-y-3">
+            <div className="rounded-lg border border-stone-200 bg-white p-3 space-y-2">
+              <p className="text-sm font-medium text-stone-700">
+                {phase === 'reading' ? 'Reading the site…' : 'Thinking about your site…'}
+              </p>
+              <StepRow label="Terrain" status={steps.Terrain} />
+              <StepRow label="Climate" status={steps.Climate} />
+              <StepRow label="Soil" status={steps.Soil} />
+              {phase === 'thinking' && (
+                <div className="flex items-center gap-2 text-sm text-stone-600 pt-1">
+                  <Spinner /> Asking the advisor… this can take 10–30s.
+                </div>
+              )}
+            </div>
+            <Button variant="secondary" onClick={cancel} className="w-full">
+              Cancel
+            </Button>
+          </div>
+        ) : (
+          <Button onClick={run} className="w-full">
+            {phase === 'done' || phase === 'error' ? 'Get advice again' : 'Get advice'}
+          </Button>
         )}
 
         {brief && <SiteBriefView brief={brief} />}
@@ -176,6 +210,38 @@ export function AdvisorPage() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function Spinner() {
+  return (
+    <svg className="w-4 h-4 animate-spin text-stone-400" viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+    </svg>
+  );
+}
+
+function StepRow({ label, status }: { label: string; status?: BriefStepStatus }) {
+  let icon;
+  let text = 'text-stone-500';
+  if (status === 'ok') {
+    icon = <span className="text-green-600">✓</span>;
+    text = 'text-stone-800';
+  } else if (status === 'unavailable') {
+    icon = <span className="text-amber-500">—</span>;
+    text = 'text-stone-400';
+  } else if (status === 'loading') {
+    icon = <Spinner />;
+  } else {
+    icon = <span className="text-stone-300">•</span>;
+  }
+  return (
+    <div className={`flex items-center gap-2 text-sm ${text}`}>
+      <span className="w-4 inline-flex justify-center">{icon}</span>
+      {label}
+      {status === 'unavailable' && <span className="text-xs text-stone-400">(couldn't read)</span>}
     </div>
   );
 }

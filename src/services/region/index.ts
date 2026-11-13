@@ -1,6 +1,11 @@
 export * from './types';
 export { resolveRegion } from './resolver';
-export { assembleSiteBrief } from './assembler';
+export {
+  assembleSiteBrief,
+  type BriefStep,
+  type BriefStepStatus,
+  type AssembleOptions,
+} from './assembler';
 export {
   hemisphereOf,
   exposureOf,

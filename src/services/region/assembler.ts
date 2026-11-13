@@ -12,22 +12,59 @@ import { packForRegion } from './packs';
 import { hemisphereOf } from './interpret';
 import { getCached, setCached } from './cache';
 
-/** Run one provider through the cache. Network failures resolve to null. */
+/** Per-provider network timeout — a stalled request must not hang the brief. */
+const PROVIDER_TIMEOUT_MS = 9000;
+
+export type BriefStep = 'Terrain' | 'Climate' | 'Soil';
+export type BriefStepStatus = 'loading' | 'ok' | 'unavailable';
+export interface AssembleOptions {
+  signal?: AbortSignal;
+  onProgress?: (step: BriefStep, status: BriefStepStatus) => void;
+}
+
+/**
+ * Run one provider through the cache, with a hard timeout so a hanging fetch
+ * resolves to null (and the brief degrades) instead of spinning forever.
+ */
 async function runProvider<T>(
   provider: ContextProvider<T>,
   at: LatLng,
-  signal?: AbortSignal
+  step: BriefStep,
+  opts: AssembleOptions
 ): Promise<T | null> {
+  opts.onProgress?.(step, 'loading');
+
   const cached = getCached<T>(provider.key, at.lat, at.lng, provider.ttlMs);
-  if (cached !== null) return cached;
-  const fresh = await provider.fetch(at, signal);
-  if (fresh !== null) setCached(provider.key, at.lat, at.lng, fresh);
-  return fresh;
+  if (cached !== null) {
+    opts.onProgress?.(step, 'ok');
+    return cached;
+  }
+
+  const ctrl = new AbortController();
+  const onAbort = () => ctrl.abort();
+  if (opts.signal) {
+    if (opts.signal.aborted) ctrl.abort();
+    else opts.signal.addEventListener('abort', onAbort);
+  }
+  const timer = setTimeout(() => ctrl.abort(), PROVIDER_TIMEOUT_MS);
+
+  try {
+    const fresh = await provider.fetch(at, ctrl.signal);
+    if (fresh !== null) setCached(provider.key, at.lat, at.lng, fresh);
+    opts.onProgress?.(step, fresh !== null ? 'ok' : 'unavailable');
+    return fresh;
+  } catch {
+    opts.onProgress?.(step, 'unavailable');
+    return null;
+  } finally {
+    clearTimeout(timer);
+    opts.signal?.removeEventListener('abort', onAbort);
+  }
 }
 
 export async function assembleSiteBrief(
   feature: Feature,
-  signal?: AbortSignal
+  opts: AssembleOptions = {}
 ): Promise<SiteBrief> {
   const [lat, lng] = getGeometryCenter(feature.geometry);
   const at: LatLng = { lat, lng };
@@ -35,9 +72,9 @@ export async function assembleSiteBrief(
   const pack = packForRegion(region);
 
   const [elevation, climate, soil] = await Promise.all([
-    runProvider(pack.elevation, at, signal),
-    runProvider(pack.climate, at, signal),
-    runProvider(pack.soil, at, signal),
+    runProvider(pack.elevation, at, 'Terrain', opts),
+    runProvider(pack.climate, at, 'Climate', opts),
+    runProvider(pack.soil, at, 'Soil', opts),
   ]);
 
   const place: SiteBrief['place'] = {

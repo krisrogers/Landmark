@@ -33,7 +33,7 @@ export const byoKeyTransport: AdvisorTransport = {
           system: ADVISOR_SYSTEM_PROMPT,
           messages: [{ role: 'user', content: buildUserPrompt(req) }],
         },
-        { signal: opts.signal }
+        { signal: opts.signal, timeout: 120_000 }
       );
 
       if (message.stop_reason === 'refusal') {
