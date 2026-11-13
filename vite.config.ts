@@ -30,14 +30,12 @@ export default defineConfig({
     react(),
     VitePWA({
       scope: basePath,
+      // Auto-updating service worker: required for the app to be installable,
+      // and gives offline use. Navigations are network-first (see workbox
+      // below) so a new deploy isn't masked by a stale cached shell; the
+      // version badge confirms which build is live.
       registerType: 'autoUpdate',
-      // Alpha: no service worker. selfDestroying ships a worker that
-      // unregisters any previously installed one and clears its caches, then
-      // registers nothing — so the app behaves like a plain site and reloads
-      // always fetch the latest. Re-enable the PWA (remove this) when the app
-      // is stable enough to want offline caching back.
-      selfDestroying: true,
-      includeAssets: ['favicon.ico', 'icons/*.png', 'templates/*.json'],
+      includeAssets: ['favicon.svg', 'icons/*.png', 'templates/*.json'],
       manifest: {
         name: 'Landmark',
         short_name: 'Landmark',
@@ -50,12 +48,20 @@ export default defineConfig({
           {
             src: 'icons/icon-192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: 'icons/icon-512.png',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'icons/icon-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       },
