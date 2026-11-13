@@ -174,6 +174,15 @@ export function FeaturePage() {
       <div className="bg-white border-b border-stone-200 px-4 py-2">
         <div className="flex gap-2 overflow-x-auto scrollbar-hide">
           <button
+            onClick={() => navigate(`/advisor/${feature.id}`)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-sm font-medium hover:bg-primary-100 whitespace-nowrap"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v2m0 14v2m9-9h-2M5 12H3m14.5-6.5l-1.4 1.4M6.9 17.1l-1.4 1.4m12.6 0l-1.4-1.4M6.9 6.9L5.5 5.5M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Planting advice
+          </button>
+          <button
             onClick={() => setShowObservationModal(true)}
             className="flex items-center gap-2 px-3 py-1.5 bg-stone-100 text-stone-700 rounded-full text-sm font-medium hover:bg-stone-200 whitespace-nowrap"
           >

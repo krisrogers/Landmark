@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { getDatabase } from './services/database';
 import { LoadingOverlay } from './components/common';
@@ -14,6 +14,11 @@ import { TemplatesPage } from './pages/TemplatesPage';
 import { ExportPage } from './pages/ExportPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { Navigation } from './components/Navigation';
+
+// Lazy-loaded so the Anthropic SDK stays out of the main bundle until used.
+const AdvisorPage = lazy(() =>
+  import('./pages/AdvisorPage').then((m) => ({ default: m.AdvisorPage }))
+);
 
 console.log('[App.tsx] Module loaded');
 
@@ -72,9 +77,11 @@ export default function App() {
   return (
     <div className="h-full flex flex-col">
       <main className="flex-1 overflow-hidden">
+        <Suspense fallback={<LoadingOverlay message="Loading…" />}>
         <Routes>
           <Route path="/" element={<MapPage />} />
           <Route path="/feature/:id" element={<FeaturePage />} />
+          <Route path="/advisor/:id" element={<AdvisorPage />} />
           <Route path="/due" element={<DuePage />} />
           <Route path="/things" element={<ThingsPage />} />
           <Route path="/asset/new" element={<AssetEditorPage />} />
@@ -86,6 +93,7 @@ export default function App() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
       </main>
       <Navigation />
     </div>

@@ -2,3 +2,11 @@ export { useFeatureStore } from './featureStore';
 export { useAssetStore } from './assetStore';
 export { useMapStore, WORLD_CENTER, WORLD_ZOOM, type BasemapType, type DrawingMode } from './mapStore';
 export { useSettingsStore, type UnitsSystem, type DateFormat } from './settingsStore';
+export {
+  useAIStore,
+  hasAI,
+  tierOf,
+  DEFAULT_ADVISOR_MODEL,
+  DEFAULT_OBJECTIVE,
+  type Tier,
+} from './aiStore';
