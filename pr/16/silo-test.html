@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SILO direct-call test</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 16px;
+         max-width: 640px; margin-inline: auto; line-height: 1.45; }
+  h1 { font-size: 1.1rem; }
+  p.note { color: #78716c; font-size: 0.85rem; }
+  label { display:block; font-size: 0.8rem; margin-top: 10px; color:#57534e; }
+  input { width: 100%; box-sizing: border-box; padding: 8px; font-size: 1rem;
+          border: 1px solid #d6d3d1; border-radius: 8px; }
+  .row { display:flex; gap: 10px; }
+  .row > div { flex: 1; }
+  button { margin-top: 16px; width: 100%; padding: 12px; font-size: 1rem; font-weight: 600;
+           background: #16a34a; color: white; border: none; border-radius: 10px; }
+  button:disabled { opacity: 0.5; }
+  .card { margin-top: 16px; border: 1px solid #d6d3d1; border-radius: 10px; overflow: hidden; }
+  .card h2 { font-size: 0.95rem; margin: 0; padding: 10px 12px; background: #f5f5f4; border-bottom: 1px solid #e7e5e4; }
+  .card .body { padding: 12px; }
+  .ok { color: #15803d; font-weight: 700; }
+  .bad { color: #b91c1c; font-weight: 700; }
+  pre { white-space: pre-wrap; word-break: break-word; font-size: 0.75rem; background:#f5f5f4; padding:8px; border-radius:6px; max-height: 180px; overflow:auto; }
+  .big { font-size: 1.6rem; font-weight: 800; }
+</style>
+</head>
+<body>
+  <h1>SILO direct-call test</h1>
+  <p class="note">Throwaway diagnostic. Tries a <b>direct browser call</b> to SILO (BoM-derived rainfall)
+     from this github.io origin, and compares it to Open-Meteo (ERA5). If SILO shows a red "blocked /
+     failed to fetch", a direct call won't work and we'd need the small proxy. Your email is sent only
+     to SILO, from your browser — SILO requires it as an identifier.</p>
+
+  <div class="row">
+    <div><label>Latitude<input id="lat" value="-26.42" /></label></div>
+    <div><label>Longitude<input id="lon" value="152.82" /></label></div>
+  </div>
+  <div class="row">
+    <div><label>Start year<input id="y0" value="2015" /></label></div>
+    <div><label>End year<input id="y1" value="2024" /></label></div>
+  </div>
+  <label>Your email (for SILO)<input id="email" type="email" placeholder="you@example.com" /></label>
+
+  <button id="run">Run test</button>
+
+  <div class="card">
+    <h2>SILO (direct) — BoM-derived</h2>
+    <div class="body" id="silo">Not run yet.</div>
+  </div>
+  <div class="card">
+    <h2>Open-Meteo (ERA5) — what the app uses now</h2>
+    <div class="body" id="om">Not run yet.</div>
+  </div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+function annualFromDaily(values) {
+  const nums = values.filter((v) => typeof v === 'number' && !Number.isNaN(v));
+  if (!nums.length) return null;
+  const total = nums.reduce((a, b) => a + b, 0);
+  const years = nums.length / 365.25;
+  return { annual: Math.round(total / years), days: nums.length };
+}
+
+function siloRainValues(json) {
+  // Be defensive about the JSON shape; pull daily rainfall however it's nested.
+  let days = Array.isArray(json) ? json
+    : Array.isArray(json.data) ? json.data
+    : (json.data && Array.isArray(json.data.days)) ? json.data.days : [];
+  const out = [];
+  for (const d of days) {
+    if (typeof d.rain === 'number') out.push(d.rain);
+    else if (typeof d.daily_rain === 'number') out.push(d.daily_rain);
+    else if (Array.isArray(d.variables)) {
+      const rv = d.variables.find((x) => /rain/i.test(x.name || x.variable_name || x.code || ''));
+      if (rv && typeof rv.value === 'number') out.push(rv.value);
+    }
+  }
+  return out;
+}
+
+async function testSilo(lat, lon, y0, y1, email) {
+  const el = $('silo');
+  if (!email) { el.innerHTML = '<span class="bad">Enter your email first.</span>'; return; }
+  const start = y0 + '0101', finish = y1 + '1231';
+  const url = `https://www.longpaddock.qld.gov.au/cgi-bin/silo/DataDrillDataset.php` +
+    `?format=json&lat=${lat}&lon=${lon}&start=${start}&finish=${finish}` +
+    `&username=${encodeURIComponent(email)}&password=api_request&comment=rainfall-test`;
+  el.textContent = 'Calling SILO…';
+  try {
+    const res = await fetch(url);
+    const text = await res.text();
+    if (!res.ok) {
+      el.innerHTML = `<span class="bad">Reached SILO but HTTP ${res.status}</span> (CORS is OK — it's a request issue).<pre>${text.slice(0,300)}</pre>`;
+      return;
+    }
+    let json; try { json = JSON.parse(text); } catch { json = null; }
+    const vals = json ? siloRainValues(json) : [];
+    const a = annualFromDaily(vals);
+    el.innerHTML = `<span class="ok">✅ Direct call worked — CORS is fine.</span>` +
+      (a ? `<div class="big">${a.annual} mm/yr</div><div class="note">${a.days} days averaged</div>`
+         : `<div class="note">Request succeeded but couldn't find rainfall in the JSON (shape differs). Raw start:</div><pre>${text.slice(0,400)}</pre>`);
+  } catch (err) {
+    el.innerHTML = `<span class="bad">❌ Blocked / failed to fetch</span> — this is the CORS wall (or no network). A direct call won't work; we'd need the proxy.<pre>${String(err)}</pre>`;
+  }
+}
+
+async function testOpenMeteo(lat, lon, y0, y1) {
+  const el = $('om');
+  const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}` +
+    `&start_date=${y0}-01-01&end_date=${y1}-12-31&daily=precipitation_sum&timezone=auto`;
+  el.textContent = 'Calling Open-Meteo…';
+  try {
+    const res = await fetch(url);
+    if (!res.ok) { el.innerHTML = `<span class="bad">HTTP ${res.status}</span>`; return; }
+    const json = await res.json();
+    const a = annualFromDaily((json.daily && json.daily.precipitation_sum) || []);
+    el.innerHTML = a
+      ? `<span class="ok">✅ Worked.</span><div class="big">${a.annual} mm/yr</div><div class="note">${a.days} days averaged</div>`
+      : `<span class="bad">No rainfall data returned.</span>`;
+  } catch (err) {
+    el.innerHTML = `<span class="bad">❌ Failed</span><pre>${String(err)}</pre>`;
+  }
+}
+
+$('run').addEventListener('click', async () => {
+  const lat = $('lat').value.trim(), lon = $('lon').value.trim();
+  const y0 = $('y0').value.trim(), y1 = $('y1').value.trim();
+  const email = $('email').value.trim();
+  $('run').disabled = true;
+  await Promise.all([testSilo(lat, lon, y0, y1, email), testOpenMeteo(lat, lon, y0, y1)]);
+  $('run').disabled = false;
+});
+</script>
+</body>
+</html>
