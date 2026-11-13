@@ -62,6 +62,18 @@ async function runProvider<T>(
   }
 }
 
+/**
+ * Fire-and-forget: warm the context cache for a place while online (e.g. right
+ * after saving it), so a later advice request in the field is instant/offline.
+ */
+export async function prefetchSiteContext(feature: Feature): Promise<void> {
+  try {
+    await assembleSiteBrief(feature);
+  } catch {
+    /* best-effort */
+  }
+}
+
 export async function assembleSiteBrief(
   feature: Feature,
   opts: AssembleOptions = {}

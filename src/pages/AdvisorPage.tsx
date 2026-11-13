@@ -56,6 +56,40 @@ export function AdvisorPage() {
 
   const hasKey = apiKey.trim().length > 0;
 
+  // Prefetch the site context as soon as the advisor opens (and a key is set),
+  // populating the cache so "Get advice" goes straight to the AI call. The read
+  // happens while the user reads the screen / edits the objective.
+  useEffect(() => {
+    if (!feature || !hasKey) return;
+    const controller = new AbortController();
+    abortRef.current = controller;
+    (async () => {
+      try {
+        await ensureBrief(controller);
+      } catch {
+        /* best-effort prefetch */
+      } finally {
+        if (!controller.signal.aborted) setPhase((p) => (p === 'reading' ? 'idle' : p));
+      }
+    })();
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feature, hasKey]);
+
+  // Reuse a fully-read brief; otherwise read the site now (populating the cache).
+  async function ensureBrief(controller: AbortController): Promise<SiteBrief | null> {
+    if (brief && brief.unavailable.length === 0) return brief;
+    setSteps({ Terrain: undefined, Climate: undefined, Soil: undefined });
+    setPhase('reading');
+    const assembled = await assembleSiteBrief(feature!, {
+      signal: controller.signal,
+      onProgress: (step, status) => setSteps((s) => ({ ...s, [step]: status })),
+    });
+    if (controller.signal.aborted) return null;
+    setBrief(assembled);
+    return assembled;
+  }
+
   async function run() {
     if (!feature) return;
     abortRef.current?.abort();
@@ -64,15 +98,9 @@ export function AdvisorPage() {
 
     setError('');
     setAdvice('');
-    setSteps({ Terrain: undefined, Climate: undefined, Soil: undefined });
-    setPhase('reading');
     try {
-      const assembled = await assembleSiteBrief(feature, {
-        signal: controller.signal,
-        onProgress: (step, status) => setSteps((s) => ({ ...s, [step]: status })),
-      });
-      if (controller.signal.aborted) return;
-      setBrief(assembled);
+      const assembled = await ensureBrief(controller);
+      if (!assembled || controller.signal.aborted) return;
 
       setPhase('thinking');
       const result = await getTransport().getAdvice(

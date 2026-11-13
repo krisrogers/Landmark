@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMapStore, useFeatureStore } from '@/store';
+import { useMapStore, useFeatureStore, useAIStore, hasAI } from '@/store';
+import { prefetchSiteContext } from '@/services/region';
 import { formatArea, formatDistance } from '@/services/geo';
 
 /**
@@ -33,6 +34,8 @@ export function MeasureResult() {
         geometry: pendingMeasure.geometry,
         tags: [],
       });
+      // Warm the advisor's context cache while we (likely) still have signal.
+      if (hasAI(useAIStore.getState())) void prefetchSiteContext(feature);
       setPendingMeasure(null);
       navigate(`/feature/${feature.id}?edit=true`);
     } catch (err) {

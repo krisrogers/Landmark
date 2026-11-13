@@ -2,6 +2,7 @@ export * from './types';
 export { resolveRegion } from './resolver';
 export {
   assembleSiteBrief,
+  prefetchSiteContext,
   type BriefStep,
   type BriefStepStatus,
   type AssembleOptions,
