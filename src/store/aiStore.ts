@@ -28,11 +28,17 @@ interface AIState {
   defaultObjective: string;
   /** Model id used for advisor calls. */
   model: string;
+  /**
+   * Email used as the identifier for SILO (BoM-derived Australian rainfall).
+   * SILO requires one; empty = AU rainfall falls back to the global source.
+   */
+  siloEmail: string;
 
   setApiKey: (apiKey: string) => void;
   clearApiKey: () => void;
   setDefaultObjective: (objective: string) => void;
   setModel: (model: string) => void;
+  setSiloEmail: (email: string) => void;
 }
 
 export const useAIStore = create<AIState>()(
@@ -41,11 +47,13 @@ export const useAIStore = create<AIState>()(
       apiKey: '',
       defaultObjective: DEFAULT_OBJECTIVE,
       model: DEFAULT_ADVISOR_MODEL,
+      siloEmail: '',
 
       setApiKey: (apiKey) => set({ apiKey: apiKey.trim() }),
       clearApiKey: () => set({ apiKey: '' }),
       setDefaultObjective: (defaultObjective) => set({ defaultObjective }),
       setModel: (model) => set({ model }),
+      setSiloEmail: (siloEmail) => set({ siloEmail: siloEmail.trim() }),
     }),
     {
       name: 'landmark-ai',

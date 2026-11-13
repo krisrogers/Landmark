@@ -113,7 +113,15 @@ export function SettingsPage() {
 }
 
 function AISection() {
-  const { apiKey, defaultObjective, setApiKey, clearApiKey, setDefaultObjective } = useAIStore();
+  const {
+    apiKey,
+    defaultObjective,
+    siloEmail,
+    setApiKey,
+    clearApiKey,
+    setDefaultObjective,
+    setSiloEmail,
+  } = useAIStore();
   const [showKey, setShowKey] = useState(false);
   const configured = apiKey.trim().length > 0;
 
@@ -172,6 +180,21 @@ function AISection() {
           onChange={(e) => setDefaultObjective(e.target.value)}
           helperText="Pre-filled when you ask for advice; editable each time."
         />
+
+        <Input
+          label="SILO email (Australian rainfall)"
+          type="email"
+          autoComplete="off"
+          spellCheck={false}
+          placeholder="you@example.com"
+          value={siloEmail}
+          onChange={(e) => setSiloEmail(e.target.value)}
+        />
+        <p className="-mt-2 text-xs text-stone-500">
+          Optional. In Australia, rainfall is pulled from BoM-derived SILO data (more accurate in
+          hilly areas) — SILO requires an email as an identifier. Left blank, rainfall uses the
+          global model.
+        </p>
 
         <p className="text-xs text-stone-400">Model: {DEFAULT_ADVISOR_MODEL}</p>
       </div>

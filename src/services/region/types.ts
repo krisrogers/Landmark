@@ -49,9 +49,14 @@ export interface ClimateContext {
   frostDays: number;
   /** Mean daily max of the warmest month, averaged over the window (°C). */
   warmestMonthMeanMaxC: number;
-  /** First and last calendar year in the averaging window. */
+  /** First and last calendar year in the (temperature) averaging window. */
   startYear: number;
   endYear: number;
+  /** Where the rainfall figure came from, when better than the default model. */
+  rainfallSource?: string;
+  /** Averaging window for the rainfall figure, if different from the temps. */
+  rainfallStartYear?: number;
+  rainfallEndYear?: number;
 }
 
 export type SoilTexture =

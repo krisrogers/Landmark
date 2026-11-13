@@ -8,6 +8,7 @@
 import type { RegionKey, RegionPack } from '../types';
 import { openMeteoElevation } from '../providers/elevation.openMeteo';
 import { openMeteoClimate } from '../providers/climate.openMeteo';
+import { auClimate } from '../providers/climate.au';
 import { soilGridsSoil } from '../providers/soil.soilGrids';
 
 const globalPack: RegionPack = {
@@ -21,9 +22,10 @@ const globalPack: RegionPack = {
 const auPack: RegionPack = {
   region: 'AU',
   label: 'Australia',
-  // TODO: override with Geoscience Australia DEM + CSIRO Soil & Landscape Grid.
+  // TODO: override elevation with Geoscience Australia DEM; soil with CSIRO SLGA.
   elevation: openMeteoElevation,
-  climate: openMeteoClimate,
+  // BoM-derived rainfall (SILO) with Open-Meteo temps; falls back to Open-Meteo.
+  climate: auClimate,
   soil: soilGridsSoil,
 };
 

@@ -26,7 +26,9 @@ export function SiteBriefView({ brief }: { brief: SiteBrief }) {
     const c = brief.climate;
     rows.push({
       label: 'Rainfall',
-      value: `~${c.annualRainfallMm} mm/yr (${c.startYear}–${c.endYear} avg)`,
+      value: c.rainfallSource
+        ? `~${c.annualRainfallMm} mm/yr · ${c.rainfallSource} (${c.rainfallStartYear}–${c.rainfallEndYear})`
+        : `~${c.annualRainfallMm} mm/yr (${c.startYear}–${c.endYear} avg)`,
     });
     rows.push({
       label: 'Temperature',

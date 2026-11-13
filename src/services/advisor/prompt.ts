@@ -53,8 +53,11 @@ export function briefToConditionsText(brief: SiteBrief): string {
 
   if (brief.climate) {
     const c = brief.climate;
+    const rain = c.rainfallSource
+      ? `~${c.annualRainfallMm} mm/yr mean rainfall (${c.rainfallSource}, ${c.rainfallStartYear}–${c.rainfallEndYear})`
+      : `~${c.annualRainfallMm} mm/yr mean rainfall`;
     lines.push(
-      `Climate (${c.startYear}–${c.endYear} average): ~${c.annualRainfallMm} mm/yr mean rainfall; warmest-month mean max ~${c.warmestMonthMeanMaxC}°C; extremes ${c.tMinExtremeC}°C to ${c.tMaxExtremeC}°C; ~${c.frostDays} frost day(s)/yr.`
+      `Climate: ${rain}; warmest-month mean max ~${c.warmestMonthMeanMaxC}°C; extremes ${c.tMinExtremeC}°C to ${c.tMaxExtremeC}°C; ~${c.frostDays} frost day(s)/yr (temps ${c.startYear}–${c.endYear}).`
     );
   }
 
