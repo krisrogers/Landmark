@@ -17,7 +17,7 @@ export function FeaturePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { db, isReady } = useDatabase();
-  const { features, deleteFeature, loadFeatures } = useFeatureStore();
+  const { deleteFeature, loadFeatures } = useFeatureStore();
 
   const [feature, setFeature] = useState<Feature | null>(null);
   const [observations, setObservations] = useState<Observation[]>([]);
@@ -32,45 +32,51 @@ export function FeaturePage() {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  // Load feature and related data
+  // Load feature and related data. Read the store via getState() rather than
+  // subscribing to `features` — depending on `features` here while calling
+  // loadFeatures() (which replaces the array) caused an infinite update loop
+  // (React #185) whenever the feature wasn't already in the store.
   useEffect(() => {
     if (!isReady || !db || !id) return;
+    let active = true;
 
-    async function loadData() {
+    (async () => {
       setIsLoading(true);
       try {
-        // Get feature from store or reload
-        let f = features.find((f) => f.id === id);
+        let f = useFeatureStore.getState().features.find((x) => x.id === id);
         if (!f) {
           await loadFeatures();
-          f = features.find((f) => f.id === id);
+          f = useFeatureStore.getState().features.find((x) => x.id === id);
         }
+        if (!active) return;
 
         if (f) {
           setFeature(f);
-
-          // Load related data
           const [obs, meas, tsks, med] = await Promise.all([
-            getObservationsByFeatureId(db!, id!),
-            getMeasurementsByFeatureId(db!, id!),
-            getTasksByFeatureId(db!, id!),
-            getMediaByFeatureId(db!, id!),
+            getObservationsByFeatureId(db, id),
+            getMeasurementsByFeatureId(db, id),
+            getTasksByFeatureId(db, id),
+            getMediaByFeatureId(db, id),
           ]);
-
+          if (!active) return;
           setObservations(obs);
           setMeasurements(meas);
           setTasks(tsks);
           setMedia(med);
+        } else {
+          setFeature(null);
         }
       } catch (err) {
         console.error('Failed to load feature:', err);
       } finally {
-        setIsLoading(false);
+        if (active) setIsLoading(false);
       }
-    }
+    })();
 
-    loadData();
-  }, [isReady, db, id, features, loadFeatures]);
+    return () => {
+      active = false;
+    };
+  }, [isReady, db, id, loadFeatures]);
 
   const handleDelete = async () => {
     if (!id) return;
