@@ -119,5 +119,10 @@ export default defineConfig({
   },
   build: {
     target: 'es2020'
+  },
+  // Keep function/component names through minification so the error boundary's
+  // component stack is readable in production (helps pinpoint render-loop bugs).
+  esbuild: {
+    keepNames: true
   }
 });
