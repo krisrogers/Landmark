@@ -32,6 +32,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
     isWatching: false,
   });
   const watchIdRef = useRef<string | null>(null);
+  const lastTickRef = useRef(0);
 
   const { setGpsPosition, setGpsError, beginGpsRequest } = useMapStore();
 
@@ -88,6 +89,13 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
             setState((s) => ({ ...s, error: errorMessage }));
             setGpsError(errorMessage, getErrorKind(err));
           } else if (position) {
+            // Throttle updates: a high-accuracy watch can fire many times a
+            // second while refining. Pushing each tick re-renders the whole map
+            // (and the local state that drives walk points), causing lag. Cap to
+            // ~1/s, but always take the first fix immediately.
+            const now = Date.now();
+            if (now - lastTickRef.current < 1000) return;
+            lastTickRef.current = now;
             setState((s) => ({ ...s, position, error: null }));
             setGpsPosition(position as unknown as GeolocationPosition);
           }
