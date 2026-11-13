@@ -73,10 +73,16 @@ function siloRainValues(json) {
     : (json.data && Array.isArray(json.data.days)) ? json.data.days : [];
   const out = [];
   for (const d of days) {
-    if (typeof d.rain === 'number') out.push(d.rain);
-    else if (typeof d.daily_rain === 'number') out.push(d.daily_rain);
-    else if (Array.isArray(d.variables)) {
-      const rv = d.variables.find((x) => /rain/i.test(x.name || x.variable_name || x.code || ''));
+    let found = false;
+    // Flat keys like daily_rain / rain.
+    for (const [k, v] of Object.entries(d)) {
+      if (/rain/i.test(k) && typeof v === 'number') { out.push(v); found = true; break; }
+    }
+    if (found) continue;
+    // Or a variables array with a rainfall-named entry.
+    if (Array.isArray(d.variables)) {
+      const rv = d.variables.find((x) =>
+        /rain/i.test(x.name || x.variable_name || x.variable_code || x.code || ''));
       if (rv && typeof rv.value === 'number') out.push(rv.value);
     }
   }
@@ -89,7 +95,7 @@ async function testSilo(lat, lon, y0, y1, email) {
   const start = y0 + '0101', finish = y1 + '1231';
   const url = `https://www.longpaddock.qld.gov.au/cgi-bin/silo/DataDrillDataset.php` +
     `?format=json&lat=${lat}&lon=${lon}&start=${start}&finish=${finish}` +
-    `&username=${encodeURIComponent(email)}&password=api_request&comment=rainfall-test`;
+    `&username=${encodeURIComponent(email)}&password=apirequest&comment=R`;
   el.textContent = 'Calling SILO…';
   try {
     const res = await fetch(url);
