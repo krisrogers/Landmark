@@ -1,7 +1,7 @@
 import { useEffect, useState, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { getDatabase } from './services/database';
-import { LoadingOverlay } from './components/common';
+import { LoadingOverlay, ErrorBoundary } from './components/common';
 import { MapPage } from './pages/MapPage';
 import { FeaturePage } from './pages/FeaturePage';
 import { DuePage } from './pages/DuePage';
@@ -77,6 +77,7 @@ export default function App() {
   return (
     <div className="h-full flex flex-col">
       <main className="flex-1 overflow-hidden">
+        <ErrorBoundary>
         <Suspense fallback={<LoadingOverlay message="Loading…" />}>
         <Routes>
           <Route path="/" element={<MapPage />} />
@@ -94,6 +95,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </Suspense>
+        </ErrorBoundary>
       </main>
       <Navigation />
     </div>
