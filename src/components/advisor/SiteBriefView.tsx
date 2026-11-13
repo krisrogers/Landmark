@@ -24,12 +24,15 @@ export function SiteBriefView({ brief }: { brief: SiteBrief }) {
 
   if (brief.climate) {
     const c = brief.climate;
-    rows.push({ label: 'Rainfall', value: `~${c.annualRainfallMm} mm/yr (${c.sampleYear})` });
+    rows.push({
+      label: 'Rainfall',
+      value: `~${c.annualRainfallMm} mm/yr (${c.startYear}–${c.endYear} avg)`,
+    });
     rows.push({
       label: 'Temperature',
       value: `${c.tMinExtremeC}°C to ${c.tMaxExtremeC}°C · warmest-month mean max ~${c.warmestMonthMeanMaxC}°C`,
     });
-    rows.push({ label: 'Frost', value: `${c.frostDays} day(s)/yr` });
+    rows.push({ label: 'Frost', value: `~${c.frostDays} day(s)/yr` });
   }
 
   if (brief.soil) {

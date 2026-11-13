@@ -39,18 +39,19 @@ export interface ElevationContext {
 }
 
 export interface ClimateContext {
-  /** Total precipitation over the sampled year (mm). */
+  /** Mean annual precipitation averaged over the sampled years (mm/yr). */
   annualRainfallMm: number;
-  /** Hottest daily max observed (°C). */
+  /** Hottest daily max observed across the window (°C). */
   tMaxExtremeC: number;
-  /** Coldest daily min observed (°C). */
+  /** Coldest daily min observed across the window (°C). */
   tMinExtremeC: number;
-  /** Number of days with min temp at or below 0°C (frost). */
+  /** Mean number of frost days (min ≤ 0°C) per year. */
   frostDays: number;
-  /** Mean daily max of the warmest month (°C). */
+  /** Mean daily max of the warmest month, averaged over the window (°C). */
   warmestMonthMeanMaxC: number;
-  /** The calendar year the sample covers. */
-  sampleYear: number;
+  /** First and last calendar year in the averaging window. */
+  startYear: number;
+  endYear: number;
 }
 
 export type SoilTexture =
