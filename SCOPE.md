@@ -33,6 +33,9 @@ matters, and never rely on memory for what you saw or what still needs doing.*
    intent, grouping, "projects") is a tag, not a hard-coded concept.
 7. **The task is the protagonist** — planning and execution are task-centric; places and
    assets are what tasks hang from.
+8. **AI is advisory and gated** — AI never acts on the map on its own; it advises *on request*,
+   is a paid-tier capability, and **the app (not the model) interprets the land** while the model
+   reasons about horticulture.
 
 ---
 
@@ -133,6 +136,88 @@ Fast capture remains a priority.
 
 ---
 
+## AI Advisor (gated; advice-only this phase)
+
+Landmark can, on request, give **site-specific planting and land-use advice** for a particular
+Place. It is framed around **permaculture and syntropic** systems rather than generic gardening —
+a focused lens gives sharper, more usable answers.
+
+This is the first **gated** capability (see *Tiers & Gating*). It is deliberately **advice-only**
+in this phase: the advisor returns a written recommendation you read. Turning recommendations into
+map features and tasks is **Plan B**, deferred until the advice itself is proven (see *Deferred*).
+
+### Flow
+
+1. Pick a Place (a measured area, a point, a walked boundary) and optionally attach **photos** and
+   **notes** describing what's growing and the conditions.
+2. Give an **objective** (e.g. "personal → commercial food production, syntropic system").
+3. The app assembles a **site brief** from the Place's location via the regional context pipeline
+   (below) and sends it, with your objective and photos, to Claude.
+4. Claude returns advice; you read it. **Nothing is written to the map.**
+
+### Division of labour
+
+> **The app interprets the terrain; the AI does the horticulture.**
+
+The app turns raw data into plain-language conditions ("upper-slope, north-facing — sun-facing in
+the southern hemisphere — ~12° gradient, well-drained, high sun") and hands *that* to the model,
+not raw numbers. Better answers, cheaper calls, more reliable output. The model is told explicitly
+**what is known vs. unknown** and must not invent conditions it wasn't given.
+
+### Transport — bring-your-own-key (this phase)
+
+Landmark is a static, backend-less app. The advisor uses **BYO-key**: the user stores their own
+Anthropic API key locally (Settings), and the app calls Claude **directly from the device**. *Your
+key, your credits*, no server — and it doubles as the unlock for the gated feature. A hosted
+**proxy** (so a paid tier can call without a personal key) is deferred to a public-release phase;
+the advisor is written so the **transport can be swapped without touching the feature**.
+
+### Offline behaviour
+
+The AI call itself needs connectivity. But context is **pre-fetched and cached** when online
+(terrain tiles and climate for the property), so a brief can be assembled in the field and the call
+made as soon as there's signal. With no key or no connectivity the advisor is simply unavailable;
+core mapping/measuring is unaffected.
+
+---
+
+## Regional Context
+
+The site brief is built by a **regional, pluggable** context pipeline. Regionality is in the
+architecture from the start; only **Australia** (plus a worldwide fallback) is implemented now.
+
+- **Region resolver** — maps a location to a region key (`AU` inside Australia, else `global`).
+- **Context providers** — one interface per kind of context, so sources are swappable per region:
+  - `ElevationProvider` → elevation, **slope**, **aspect**, **landform** (ridge / mid-slope /
+    gully), derived **on-device** from open elevation tiles
+  - `ClimateProvider` → temperature range, rainfall, frost (Open-Meteo: keyless, cacheable)
+  - `SoilProvider` → pH, texture (SoilGrids globally; CSIRO Soil & Landscape Grid for `AU`)
+  - (`LandCoverProvider`, `WaterProvider` — later)
+- **Region packs** — `global` uses worldwide sources; `AU` overrides where Australia has better
+  data (Geoscience Australia DEM, CSIRO soil) and inherits `global` for the rest. **Adding a region
+  = implement + register providers; no changes to existing code.**
+- **Context assembler** — runs the active region's providers, applies **hemisphere-aware**
+  interpretation, and produces the site brief. Any provider may fail, be offline, or not cover a
+  spot; the brief **degrades gracefully**, omitting what it couldn't get and flagging it unknown.
+
+Derived on-device from location alone (no network, works offline): hemisphere, day length, sun
+angles, and — with cached elevation tiles — elevation, slope, aspect, landform.
+
+---
+
+## Tiers & Gating
+
+Landmark ships a **free** tier and a **pro** tier, with the line drawn on **running cost**, not
+arbitrarily:
+
+- **Free** — all mapping, measuring, Places, Assets, tasks, reminders. Costs nothing to run.
+- **Pro** — AI features, which carry a real per-call cost.
+
+The gate is a thin `tier` check built in now. This phase unlocks "pro" by the **presence of a
+BYO key**; later the same gate flips to a real entitlement **without changing feature code**.
+
+---
+
 ## Data & Storage
 
 ### Local storage only
@@ -174,14 +259,22 @@ Fast capture remains a priority.
 - **Voice notes**
 - **Asset containment beyond "located at a Place"** (nesting hierarchies)
 - **Walk-to-trace refinements** (pause/resume, drift smoothing)
+- **AI Plan B — actionable advice**: turning recommendations into map features and care tasks
+  (structured strata / spacing / succession output, tap-to-place). Deferred until advice-only
+  (Plan A) is proven.
+- **Hosted AI proxy** for a paid tier that calls without a personal key — BYO-key ships first
+- **Further regions** beyond `AU` + `global`, and extra context providers (land cover, water /
+  drainage)
 
 ## Explicitly Out of Scope (V2)
 
 - **Consumables / inventory** (feed, seed, fuel, spare parts) — quantities and depletion do not
   fit the located-thing + task model; keeping them out preserves coherence
 - Cloud sync, multi-user, conflict resolution
-- Managed offline basemap packs (MBTiles), terrain / contour / DEM layers
-- Automation, recommendations, AI features
+- Managed offline basemap packs (MBTiles); terrain / contour / DEM as a **displayed map layer**
+  (DEM *sampled for AI site context* **is** in scope — see *AI Advisor*)
+- **AI that acts on its own** — automation, or the model writing to the map unprompted (the advisor
+  is request-only and advice-only this phase)
 - Financial / cost tracking
 
 ---
