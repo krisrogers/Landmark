@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useFeatureStore, useAIStore } from '@/store';
 import { Button, TextArea, LoadingSpinner } from '@/components/common';
 import {
@@ -8,7 +8,7 @@ import {
   type BriefStep,
   type BriefStepStatus,
 } from '@/services/region';
-import { getTransport, AdvisorError } from '@/services/advisor';
+import { getTransport, AdvisorError, buildSharePrompt } from '@/services/advisor';
 import type { Feature } from '@/types';
 import { SiteBriefView } from '@/components/advisor/SiteBriefView';
 import { Markdownish } from '@/components/advisor/Markdownish';
@@ -56,11 +56,11 @@ export function AdvisorPage() {
 
   const hasKey = apiKey.trim().length > 0;
 
-  // Prefetch the site context as soon as the advisor opens (and a key is set),
-  // populating the cache so "Get advice" goes straight to the AI call. The read
-  // happens while the user reads the screen / edits the objective.
+  // Prefetch the site context as soon as the advisor opens (no key needed —
+  // reading the site is just data), so both "Get advice" and "Open in Claude"
+  // are ready while the user reads the screen / edits the objective.
   useEffect(() => {
-    if (!feature || !hasKey) return;
+    if (!feature) return;
     const controller = new AbortController();
     abortRef.current = controller;
     (async () => {
@@ -74,7 +74,7 @@ export function AdvisorPage() {
     })();
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [feature, hasKey]);
+  }, [feature]);
 
   // Reuse a fully-read brief; otherwise read the site now (populating the cache).
   async function ensureBrief(controller: AbortController): Promise<SiteBrief | null> {
@@ -122,6 +122,33 @@ export function AdvisorPage() {
     setPhase('idle');
   }
 
+  // No-API-key path: read the site, then hand the whole prompt to claude.ai
+  // (uses the user's login, no credits). Clipboard copy is a backup in case the
+  // URL is too long to carry the query param on some browsers.
+  async function openInClaude() {
+    if (!feature) return;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setError('');
+    try {
+      const assembled = await ensureBrief(controller);
+      if (!assembled || controller.signal.aborted) return;
+      setPhase('idle');
+      const text = buildSharePrompt({ brief: assembled, objective, notes });
+      try {
+        await navigator.clipboard?.writeText(text);
+      } catch {
+        /* clipboard best-effort */
+      }
+      window.open('https://claude.ai/new?q=' + encodeURIComponent(text), '_blank', 'noopener');
+    } catch (err) {
+      if (controller.signal.aborted || (err instanceof Error && err.name === 'AbortError')) return;
+      setError('Could not read the site to build the prompt.');
+      setPhase('error');
+    }
+  }
+
   const header = (
     <header className="bg-white border-b border-stone-200 px-4 py-3 safe-top flex items-center gap-3">
       <button onClick={() => navigate(-1)} className="text-stone-500 hover:text-stone-800" aria-label="Back">
@@ -142,26 +169,6 @@ export function AdvisorPage() {
         {header}
         <div className="flex-1 flex items-center justify-center text-stone-500">
           <LoadingSpinner />
-        </div>
-      </div>
-    );
-  }
-
-  if (!hasKey) {
-    return (
-      <div className="h-full flex flex-col bg-stone-50">
-        {header}
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="rounded-lg border border-stone-200 bg-white p-5 text-center max-w-md mx-auto mt-6">
-            <h2 className="text-base font-semibold text-stone-900 mb-2">AI advisor is a Pro feature</h2>
-            <p className="text-sm text-stone-600 mb-4">
-              Add your own Anthropic API key in Settings to enable site-specific planting advice.
-              Your key stays on this device and is billed to your own account.
-            </p>
-            <Link to="/settings">
-              <Button>Open Settings</Button>
-            </Link>
-          </div>
         </div>
       </div>
     );
@@ -215,9 +222,25 @@ export function AdvisorPage() {
             </Button>
           </div>
         ) : (
-          <Button onClick={run} className="w-full">
-            {phase === 'done' || phase === 'error' ? 'Get advice again' : 'Get advice'}
-          </Button>
+          <div className="space-y-2">
+            {hasKey && (
+              <Button onClick={run} className="w-full">
+                {phase === 'done' || phase === 'error' ? 'Get advice again' : 'Get advice'}
+              </Button>
+            )}
+            <Button
+              variant={hasKey ? 'secondary' : 'primary'}
+              onClick={openInClaude}
+              className="w-full"
+            >
+              Open in Claude
+            </Button>
+            <p className="text-xs text-stone-500 text-center">
+              {hasKey
+                ? '“Open in Claude” sends the full prompt to claude.ai (your login, no credits) — also copied to your clipboard.'
+                : 'No API key needed — “Open in Claude” sends the full prompt to claude.ai using your login. In-app advice needs a key in Settings.'}
+            </p>
+          </div>
         )}
 
         {brief && <SiteBriefView brief={brief} />}

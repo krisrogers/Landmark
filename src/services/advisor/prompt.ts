@@ -79,6 +79,14 @@ export function briefToConditionsText(brief: SiteBrief): string {
   return lines.join('\n');
 }
 
+/**
+ * A single self-contained prompt for pasting into claude.ai (which has no
+ * separate system field) — the advisor instructions followed by the request.
+ */
+export function buildSharePrompt(req: AdviceRequest): string {
+  return `${ADVISOR_SYSTEM_PROMPT}\n\n---\n\n${buildUserPrompt(req)}`;
+}
+
 /** Build the full user message for an advice request. */
 export function buildUserPrompt(req: AdviceRequest): string {
   const sections = [

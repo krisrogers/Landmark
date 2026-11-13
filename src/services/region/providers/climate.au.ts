@@ -10,8 +10,8 @@ import { openMeteoClimate } from './climate.openMeteo';
 import { useAIStore } from '@/store';
 
 const DAY = 24 * 60 * 60 * 1000;
-/** Longer window than the temps: a truer rainfall normal (smooths drought/wet). */
-const RAIN_YEARS = 20;
+/** Rainfall normal window (matches the temperature window). */
+const RAIN_YEARS = 10;
 /** SILO can return a lot of daily rows; cap its own wait below the provider budget. */
 const SILO_TIMEOUT_MS = 8000;
 
