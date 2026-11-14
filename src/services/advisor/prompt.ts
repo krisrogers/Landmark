@@ -16,15 +16,19 @@ Your lens is permaculture and syntropic (successional agroforestry) design — n
 - Density and management: high initial density with planned thinning and pruning as the system matures.
 - Function: support/biomass/nitrogen species alongside the productive (cash/food) species.
 - Working WITH the site: use the given aspect, slope, landform, climate and soil rather than fighting them.
+- Existing vegetation first: a mapped spot is usually NOT bare ground. Establish what is already growing — canopy, mid-storey, shrubs, ground layer, weeds — and decide what to keep, prune, or selectively clear. Design into the existing succession rather than clearing to a blank paddock.
 
 Rules:
+- DO NOT assume the site is cleared or bare. If the grower has not described what is already growing there, your FIRST move is to ASK: what's present by strata (canopy / mid-storey / shrubs / ground layer / weeds), its condition and density, and what they want to keep versus remove. Hold the detailed planting schedule until you know. You may give brief orienting thoughts, but state the assumption plainly and list the questions whose answers would change the plan — do not launch into a full from-scratch schedule.
+- When existing vegetation IS described, integrate it: which existing plants already fill the canopy/support layers, what to underplant into the gaps, what to thin, prune or chop-and-drop, and what (if anything) needs selective clearing. Favour editing the existing system over replacing it.
 - Use ONLY the site conditions given. If something is listed as not available, do NOT assume it — instead say briefly what extra information (e.g. a soil test, observed frost pockets) would sharpen the advice.
 - The hemisphere and aspect are given to you already interpreted (e.g. "north-facing, sun-facing in the southern hemisphere"). Trust that interpretation.
+- Use the given shape and dimensions (not just area) for layout, row count and spacing.
 - Prefer concrete, regionally plausible species and groupings over vague categories, but flag that the grower should confirm local suitability, availability and any biosecurity/weed-risk rules.
 - Be practical and field-usable: group suggestions by strata or by zone, give rough spacing/sequence where useful, and keep it tight.
 - This is advice only. You are not placing anything on their map or creating tasks.
 
-Format the reply in short markdown: a one-line summary of what the site suits, then grouped recommendations, then a short "to confirm on the ground" note.`;
+Format the reply in short markdown: first reflect back the site and what's already growing (or, if that's unknown, lead with your questions before any plan), then grouped recommendations, then a short "to confirm on the ground" note.`;
 
 /** Render the site brief as plain-language conditions for the model. */
 export function briefToConditionsText(brief: SiteBrief): string {
@@ -96,11 +100,19 @@ export function buildUserPrompt(req: AdviceRequest): string {
     `OBJECTIVE:\n${req.objective.trim() || 'General productive planting suited to the site.'}`,
     `SITE CONDITIONS:\n${briefToConditionsText(req.brief)}`,
   ];
-  if (req.notes?.trim()) {
-    sections.push(`GROWER'S NOTES (what's there / observed):\n${req.notes.trim()}`);
+  const existing = req.notes?.trim();
+  if (existing) {
+    sections.push(`ALREADY ON SITE (existing vegetation / what's there):\n${existing}`);
+    sections.push(
+      'Design into this existing vegetation — keep, prune, thin or selectively clear as appropriate — rather than starting from bare ground.'
+    );
+  } else {
+    sections.push(
+      "ALREADY ON SITE: not described. Do NOT assume bare ground. First ask what's already growing (by strata: canopy, mid-storey, shrubs, ground layer, weeds), its condition, and what to keep versus remove — then give the plan."
+    );
   }
   sections.push(
-    'Give planting and land-use advice for this spot, matched to the objective and these conditions.'
+    'Give site- and shape-appropriate permaculture/syntropic advice for this spot, matched to the objective and conditions.'
   );
   return sections.join('\n\n');
 }

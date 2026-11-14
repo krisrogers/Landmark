@@ -194,11 +194,11 @@ export function AdvisorPage() {
         </div>
         <div>
           <TextArea
-            label="Notes (optional)"
+            label="What's already growing here?"
             rows={3}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="What's growing here now? Anything you've observed — wet corner, existing trees, wind…"
+            placeholder="Existing canopy, mid-storey, shrubs, ground layer, weeds — and what you'd keep vs clear. The advisor assumes bare ground if this is blank, so it's worth a line."
           />
         </div>
 
