@@ -13,6 +13,7 @@ import { TasksPage } from './pages/TasksPage';
 import { TemplatesPage } from './pages/TemplatesPage';
 import { ExportPage } from './pages/ExportPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { PlacesPage } from './pages/PlacesPage';
 import { Navigation } from './components/Navigation';
 
 // Lazy-loaded so the Anthropic SDK stays out of the main bundle until used.
@@ -82,6 +83,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<MapPage />} />
           <Route path="/feature/:id" element={<FeaturePage />} />
+          <Route path="/places" element={<PlacesPage />} />
           <Route path="/advisor/:id" element={<AdvisorPage />} />
           <Route path="/due" element={<DuePage />} />
           <Route path="/things" element={<ThingsPage />} />
