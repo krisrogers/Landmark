@@ -7,7 +7,10 @@ interface Props {
 interface State {
   error: Error | null;
   componentStack: string | null;
+  copied: boolean;
 }
+
+const BUILD_ID = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev';
 
 /**
  * Catches render errors in the route tree and shows the actual error instead
@@ -15,7 +18,7 @@ interface State {
  * The surrounding navigation stays mounted so the user can move away.
  */
 export class ErrorBoundary extends Component<Props, State> {
-  state: State = { error: null, componentStack: null };
+  state: State = { error: null, componentStack: null, copied: false };
 
   static getDerivedStateFromError(error: Error): Partial<State> {
     return { error };
@@ -27,7 +30,27 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({ componentStack: info.componentStack ?? null });
   }
 
-  private reset = () => this.setState({ error: null, componentStack: null });
+  private reset = () => this.setState({ error: null, componentStack: null, copied: false });
+
+  private detailsText(): string {
+    const { error, componentStack } = this.state;
+    return [
+      `Build: ${BUILD_ID}`,
+      `Error: ${error?.name}: ${error?.message}`,
+      '',
+      error?.stack ?? '',
+      componentStack ? `\nComponent stack:${componentStack}` : '',
+    ].join('\n');
+  }
+
+  private copyDetails = async () => {
+    try {
+      await navigator.clipboard.writeText(this.detailsText());
+      this.setState({ copied: true });
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
 
   render() {
     const { error, componentStack } = this.state;
@@ -51,15 +74,22 @@ export class ErrorBoundary extends Component<Props, State> {
                 {error.name}: {error.message}
               </pre>
             </div>
-            {(error.stack || componentStack) && (
-              <details>
-                <summary className="text-xs text-stone-500 cursor-pointer">Stack</summary>
-                <pre className="mt-1 text-[11px] leading-snug text-stone-600 whitespace-pre-wrap break-words bg-stone-50 rounded p-2 border border-stone-200 max-h-64 overflow-y-auto">
-                  {error.stack}
-                  {componentStack ? `\n\nComponent stack:${componentStack}` : ''}
+            {componentStack && (
+              <div>
+                <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-1">
+                  Component stack · build {BUILD_ID}
+                </p>
+                <pre className="text-[11px] leading-snug text-stone-600 whitespace-pre-wrap break-words bg-stone-50 rounded p-2 border border-stone-200 max-h-56 overflow-y-auto">
+                  {componentStack.trim()}
                 </pre>
-              </details>
+              </div>
             )}
+            <button
+              onClick={this.copyDetails}
+              className="w-full px-3 py-2 text-sm font-medium bg-amber-100 text-amber-900 rounded-lg hover:bg-amber-200"
+            >
+              {this.state.copied ? 'Copied ✓ — paste it to Claude' : 'Copy error details'}
+            </button>
             <div className="flex gap-2 pt-1">
               <button
                 onClick={this.reset}
