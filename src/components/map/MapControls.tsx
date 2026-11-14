@@ -1,20 +1,18 @@
 import { useMap } from 'react-leaflet';
 import { useMapStore } from '@/store';
 import { useGeolocation } from '@/hooks';
-import { DrawingToolbar } from './DrawingTools';
 
 export function MapControls() {
   return (
     <>
       <FilterButton />
-      <DrawingToolbar onAddPoint={() => {}} />
     </>
   );
 }
 
 export function GpsControlButton() {
   const map = useMap();
-  const { showGpsLocation, toggleGpsLocation } = useMapStore();
+  const { showGpsLocation, toggleGpsLocation, gpsStatus } = useMapStore();
   const { getCurrentPosition, isLoading, error } = useGeolocation();
 
   const handleClick = async () => {
@@ -35,6 +33,13 @@ export function GpsControlButton() {
     }
   };
 
+  const color =
+    gpsStatus === 'error'
+      ? 'text-amber-600'
+      : gpsStatus === 'locked' || showGpsLocation
+      ? 'text-primary-600'
+      : 'text-stone-600';
+
   return (
     <div className="absolute bottom-4 right-4 z-[1000]">
       <button
@@ -45,8 +50,8 @@ export function GpsControlButton() {
           hover:bg-stone-50 active:bg-stone-100
           transition-colors min-h-touch min-w-touch
           flex items-center justify-center
-          ${showGpsLocation ? 'text-primary-600' : 'text-stone-600'}
-          ${isLoading ? 'animate-pulse' : ''}
+          ${color}
+          ${gpsStatus === 'locating' || isLoading ? 'animate-pulse' : ''}
         `}
         title={error || 'Center on my location'}
       >

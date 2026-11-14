@@ -93,17 +93,37 @@ vi.mock('../store', () => ({
     drawingMode: 'none',
     showGpsLocation: false,
     gpsPosition: null,
+    gpsStatus: 'idle',
+    gpsAccuracy: null,
+    gpsErrorKind: null,
     visibleGeometryTypes: new Set(['Point', 'LineString', 'Polygon']),
     visibleTags: new Set(),
+    isWalking: false,
+    walkPoints: [],
+    hasLocated: true,
+    pendingMeasure: null,
+    captureOpen: false,
     setCenter: vi.fn(),
     setZoom: vi.fn(),
+    setView: vi.fn(),
     setDrawingMode: vi.fn(),
     toggleGpsLocation: vi.fn(),
     resetFilters: vi.fn(),
     setBasemap: vi.fn(),
+    startWalk: vi.fn(),
+    addWalkPoint: vi.fn(),
+    clearWalk: vi.fn(),
+    setLocated: vi.fn(),
+    beginGpsRequest: vi.fn(),
+    setPendingMeasure: vi.fn(),
+    setCaptureOpen: vi.fn(),
   }),
   useFeatureStore: () => ({
     createFeature: vi.fn(),
+  }),
+  useAssetStore: () => ({
+    assets: [],
+    loadAssets: vi.fn(),
   }),
 }));
 
@@ -184,8 +204,6 @@ describe('App Initialization', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Map')).toBeInTheDocument();
-        expect(screen.getByText('Tasks')).toBeInTheDocument();
-        expect(screen.getByText('Templates')).toBeInTheDocument();
         expect(screen.getByText('Settings')).toBeInTheDocument();
       });
     });

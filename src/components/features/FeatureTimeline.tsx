@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { formatRelative } from '@/utils/datetime';
+import { formatRelative, formatDate } from '@/utils/datetime';
 import type { Observation, Measurement, Task, Media } from '@/types';
 
 interface TimelineEntry {
@@ -213,10 +213,20 @@ function TaskItem({ task }: { task: Task }) {
           <p className={`font-medium mt-1 ${task.status === 'done' ? 'text-stone-400 line-through' : 'text-stone-900'}`}>
             {task.title}
           </p>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
             <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[task.status]}`}>
               {task.status}
             </span>
+            {(task.snoozedUntil ?? task.reminderDate) && (
+              <span className="text-xs font-semibold text-amber-600">
+                Remind {formatDate(task.snoozedUntil ?? task.reminderDate!)}
+              </span>
+            )}
+            {task.recurrenceInterval && task.recurrenceUnit && (
+              <span className="text-xs text-stone-500">
+                every {task.recurrenceInterval} {task.recurrenceUnit}
+              </span>
+            )}
             {task.priority && (
               <span className="text-xs text-stone-500">Priority {task.priority}</span>
             )}

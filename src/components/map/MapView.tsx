@@ -1,17 +1,23 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, ZoomControl, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { differenceInCalendarDays, startOfDay } from 'date-fns';
 
-import { useMapStore } from '@/store';
-import { useFeatures } from '@/hooks';
+import { useMapStore, useAssetStore, WORLD_CENTER, WORLD_ZOOM } from '@/store';
+import { useFeatures, useDatabase } from '@/hooks';
+import { getDueTasks } from '@/services/database/queries';
+import { getApproxLocation } from '@/services/location';
 import { FeatureLayer } from './FeatureLayer';
+import { AssetLayer, type DueSeverity } from './AssetLayer';
 import { GpsControl } from './GpsControl';
 import { DrawingTools } from './DrawingTools';
+import { WalkRecorder } from './WalkRecorder';
+import { CaptureControls } from './CaptureControls';
+import { MeasureResult } from './MeasureResult';
 import { BasemapSelector } from './BasemapSelector';
 import { MapControls, GpsControlButton } from './MapControls';
-
-console.log('[MapView.tsx] Module loaded');
+import { GpsStatus } from './GpsStatus';
 
 // Fix Leaflet default icon issue
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
@@ -23,86 +29,193 @@ L.Icon.Default.mergeOptions({
 
 function MapEvents() {
   const { setCenter, setZoom } = useMapStore();
-
   useMapEvents({
     moveend: (e) => {
-      const map = e.target;
-      const center = map.getCenter();
+      const center = e.target.getCenter();
       setCenter([center.lat, center.lng]);
     },
-    zoomend: (e) => {
-      const map = e.target;
-      setZoom(map.getZoom());
-    },
+    zoomend: (e) => setZoom(e.target.getZoom()),
   });
+  return null;
+}
+
+function MapViewUpdater({ center, zoom }: { center: [number, number]; zoom: number }) {
+  const map = useMap();
+  const initializedRef = useRef(false);
+  useEffect(() => {
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      map.setView(center, zoom);
+    }
+  }, [map, center, zoom]);
+  return null;
+}
+
+/**
+ * On first run (no location established yet) picks a sensible map centre from an
+ * approximate IP lookup — no GPS prompt. Falls back silently to the world view
+ * already shown. Runs once; the GPS button still gives pin-point accuracy.
+ */
+function AutoLocate() {
+  const map = useMap();
+  const { hasLocated, setLocated, setView } = useMapStore();
+  const ranRef = useRef(false);
+
+  useEffect(() => {
+    if (hasLocated || ranRef.current) return;
+    ranRef.current = true;
+    let cancelled = false;
+    (async () => {
+      const loc = await getApproxLocation();
+      if (!cancelled && loc) {
+        map.setView([loc.lat, loc.lng], 12);
+        setView([loc.lat, loc.lng], 12);
+      }
+      if (!cancelled) setLocated(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hasLocated, map, setLocated, setView]);
 
   return null;
 }
 
-function MapViewUpdater() {
+/**
+ * Pans to the first precise GPS fix after opening, refining the coarse IP
+ * centre — but only while the user hasn't taken control of the map. The moment
+ * they drag, auto-follow is cancelled so we never yank the view out from under
+ * them.
+ */
+function GpsAutoCenter() {
   const map = useMap();
-  const { center, zoom } = useMapStore();
-  const initializedRef = useRef(false);
+  const { gpsPosition } = useMapStore();
+  const centeredRef = useRef(false);
+  const followRef = useRef(true);
 
   useEffect(() => {
-    if (!initializedRef.current) {
-      initializedRef.current = true;
-      // On first render, set the initial view
-      map.setView(center, zoom);
-    }
-  }, [map, center, zoom]);
+    const stopFollowing = () => {
+      followRef.current = false;
+    };
+    map.on('dragstart', stopFollowing);
+    return () => {
+      map.off('dragstart', stopFollowing);
+    };
+  }, [map]);
+
+  useEffect(() => {
+    if (centeredRef.current || !followRef.current || !gpsPosition) return;
+    centeredRef.current = true;
+    const { latitude, longitude } = gpsPosition.coords;
+    map.setView([latitude, longitude], Math.max(map.getZoom(), 16));
+  }, [gpsPosition, map]);
 
   return null;
 }
 
 interface BasemapLayerProps {
-  type: 'osm' | 'satellite' | 'none';
+  type: 'osm' | 'satellite';
 }
 
 function BasemapLayer({ type }: BasemapLayerProps) {
-  if (type === 'none') {
-    return null;
-  }
-
   if (type === 'satellite') {
     return (
       <TileLayer
         url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
         attribution="Tiles &copy; Esri"
+        maxNativeZoom={17}
         maxZoom={19}
       />
     );
   }
-
   return (
     <TileLayer
       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      maxNativeZoom={19}
       maxZoom={19}
     />
   );
 }
 
-export function MapView() {
-  const { center, zoom, basemap } = useMapStore();
-  const { features, isLoading } = useFeatures();
+/** Build a map of subjectId → due severity from open reminder-bearing tasks. */
+function useDueBySubject(): Map<string, DueSeverity> {
+  const { db, isReady } = useDatabase();
+  const [map, setMap] = useState<Map<string, DueSeverity>>(new Map());
 
-  console.log('[MapView] Component rendering, center:', center, 'zoom:', zoom, 'basemap:', basemap, 'featuresCount:', features.length, 'isLoading:', isLoading);
+  useEffect(() => {
+    if (!isReady || !db) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const tasks = await getDueTasks(db);
+        const today = startOfDay(new Date());
+        const result = new Map<string, DueSeverity>();
+        for (const t of tasks) {
+          const subjectId = t.subjectId ?? t.featureId;
+          if (!subjectId) continue;
+          const eff = t.snoozedUntil ?? t.reminderDate;
+          if (!eff) continue;
+          const days = differenceInCalendarDays(startOfDay(eff), today);
+          const severity: DueSeverity | null = days < 0 ? 'overdue' : days <= 30 ? 'due' : null;
+          if (!severity) continue;
+          const existing = result.get(subjectId);
+          if (existing === 'overdue') continue; // overdue wins
+          result.set(subjectId, severity);
+        }
+        if (!cancelled) setMap(result);
+      } catch (err) {
+        console.error('Failed to load due indicators:', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [db, isReady]);
+
+  return map;
+}
+
+export function MapView() {
+  const { center, zoom, basemap, hasLocated } = useMapStore();
+  const { features, isLoading } = useFeatures();
+  const { assets, loadAssets } = useAssetStore();
+  const dueBySubject = useDueBySubject();
+
+  useEffect(() => {
+    loadAssets();
+  }, [loadAssets]);
+
+  // Until a real location is established, open on a world overview rather than
+  // a persisted null-island/ocean centre.
+  const initialCenter = hasLocated ? center : WORLD_CENTER;
+  const initialZoom = hasLocated ? zoom : WORLD_ZOOM;
 
   return (
     <div className="relative h-full w-full">
       <MapContainer
-        center={center}
-        zoom={zoom}
+        center={initialCenter}
+        zoom={initialZoom}
         zoomControl={false}
+        minZoom={2}
+        maxZoom={19}
+        maxBounds={[
+          [-85, -180],
+          [85, 180],
+        ]}
+        maxBoundsViscosity={1}
         className="h-full w-full"
         attributionControl={true}
       >
         <MapEvents />
-        <MapViewUpdater />
-        <ZoomControl position="bottomright" />
+        <MapViewUpdater center={initialCenter} zoom={initialZoom} />
+        <AutoLocate />
+        <GpsAutoCenter />
+        <ZoomControl position="bottomleft" />
         <BasemapLayer type={basemap} />
-        <FeatureLayer features={features} isLoading={isLoading} />
+        <FeatureLayer features={features} isLoading={isLoading} dueBySubject={dueBySubject} />
+        <AssetLayer assets={assets} features={features} dueBySubject={dueBySubject} />
+        <WalkRecorder />
         <GpsControl />
         <DrawingTools />
         <GpsControlButton />
@@ -110,6 +223,9 @@ export function MapView() {
 
       <MapControls />
       <BasemapSelector />
+      <CaptureControls />
+      <MeasureResult />
+      <GpsStatus />
     </div>
   );
 }

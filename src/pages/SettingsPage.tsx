@@ -1,4 +1,6 @@
-import { useSettingsStore } from '@/store';
+import { useState } from 'react';
+import { useSettingsStore, useAIStore, DEFAULT_ADVISOR_MODEL } from '@/store';
+import { Input, TextArea } from '@/components/common';
 
 export function SettingsPage() {
   const {
@@ -89,6 +91,9 @@ export function SettingsPage() {
           </div>
         </section>
 
+        {/* AI Advisor */}
+        <AISection />
+
         {/* About */}
         <section className="bg-white mt-4 mb-4">
           <h2 className="px-4 py-2 text-sm font-medium text-stone-500 uppercase tracking-wide">
@@ -104,6 +109,96 @@ export function SettingsPage() {
         </section>
       </div>
     </div>
+  );
+}
+
+function AISection() {
+  const {
+    apiKey,
+    defaultObjective,
+    siloEmail,
+    setApiKey,
+    clearApiKey,
+    setDefaultObjective,
+    setSiloEmail,
+  } = useAIStore();
+  const [showKey, setShowKey] = useState(false);
+  const configured = apiKey.trim().length > 0;
+
+  return (
+    <section className="bg-white mt-4">
+      <h2 className="px-4 py-2 text-sm font-medium text-stone-500 uppercase tracking-wide">
+        AI Advisor <span className="text-primary-600">· Pro</span>
+      </h2>
+      <div className="px-4 py-3 space-y-4">
+        <p className="text-sm text-stone-600">
+          Get site-specific permaculture / syntropic planting advice on a place. Uses your own
+          Anthropic API key: it's stored only on this device and billed to your own account.
+        </p>
+
+        <div>
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
+              <Input
+                label="Anthropic API key"
+                type={showKey ? 'text' : 'password'}
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="sk-ant-…"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowKey((s) => !s)}
+              className="mb-1 px-3 py-2 text-sm text-stone-600 hover:bg-stone-100 rounded-lg"
+            >
+              {showKey ? 'Hide' : 'Show'}
+            </button>
+          </div>
+          <div className="mt-1 flex items-center justify-between">
+            <p className="text-xs text-stone-500">
+              {configured ? '✓ Key saved on this device' : 'Get a key at platform.claude.com'}
+            </p>
+            {configured && (
+              <button
+                type="button"
+                onClick={clearApiKey}
+                className="text-xs text-red-600 hover:underline"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+
+        <TextArea
+          label="Default objective"
+          rows={2}
+          value={defaultObjective}
+          onChange={(e) => setDefaultObjective(e.target.value)}
+          helperText="Pre-filled when you ask for advice; editable each time."
+        />
+
+        <Input
+          label="SILO email (Australian rainfall)"
+          type="email"
+          autoComplete="off"
+          spellCheck={false}
+          placeholder="you@example.com"
+          value={siloEmail}
+          onChange={(e) => setSiloEmail(e.target.value)}
+        />
+        <p className="-mt-2 text-xs text-stone-500">
+          Optional. In Australia, rainfall is pulled from BoM-derived SILO data (more accurate in
+          hilly areas) — SILO requires an email as an identifier. Left blank, rainfall uses the
+          global model.
+        </p>
+
+        <p className="text-xs text-stone-400">Model: {DEFAULT_ADVISOR_MODEL}</p>
+      </div>
+    </section>
   );
 }
 

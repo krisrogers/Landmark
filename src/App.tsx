@@ -1,14 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { getDatabase } from './services/database';
-import { LoadingOverlay } from './components/common';
+import { LoadingOverlay, ErrorBoundary } from './components/common';
 import { MapPage } from './pages/MapPage';
 import { FeaturePage } from './pages/FeaturePage';
+import { DuePage } from './pages/DuePage';
+import { ThingsPage } from './pages/ThingsPage';
+import { AssetPage } from './pages/AssetPage';
+import { AssetEditorPage } from './pages/AssetEditorPage';
+import { TaskEditorPage } from './pages/TaskEditorPage';
 import { TasksPage } from './pages/TasksPage';
 import { TemplatesPage } from './pages/TemplatesPage';
 import { ExportPage } from './pages/ExportPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { PlacesPage } from './pages/PlacesPage';
 import { Navigation } from './components/Navigation';
+
+// Lazy-loaded so the Anthropic SDK stays out of the main bundle until used.
+const AdvisorPage = lazy(() =>
+  import('./pages/AdvisorPage').then((m) => ({ default: m.AdvisorPage }))
+);
 
 console.log('[App.tsx] Module loaded');
 
@@ -67,15 +78,26 @@ export default function App() {
   return (
     <div className="h-full flex flex-col">
       <main className="flex-1 overflow-hidden">
+        <ErrorBoundary>
+        <Suspense fallback={<LoadingOverlay message="Loading…" />}>
         <Routes>
           <Route path="/" element={<MapPage />} />
           <Route path="/feature/:id" element={<FeaturePage />} />
+          <Route path="/places" element={<PlacesPage />} />
+          <Route path="/advisor/:id" element={<AdvisorPage />} />
+          <Route path="/due" element={<DuePage />} />
+          <Route path="/things" element={<ThingsPage />} />
+          <Route path="/asset/new" element={<AssetEditorPage />} />
+          <Route path="/asset/:id" element={<AssetPage />} />
+          <Route path="/task/new" element={<TaskEditorPage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/templates" element={<TemplatesPage />} />
           <Route path="/export" element={<ExportPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
+        </ErrorBoundary>
       </main>
       <Navigation />
     </div>

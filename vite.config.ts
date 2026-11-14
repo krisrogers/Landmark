@@ -1,18 +1,41 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { execSync } from 'node:child_process';
 import path from 'path';
 
 const basePath = process.env.VITE_BASE_PATH || '/';
 
+// Build identity, stamped into the bundle and shown as an on-screen badge so it
+// is obvious which deploy is running after a refresh.
+function commitSha(): string {
+  const explicit = process.env.VITE_COMMIT_SHA || process.env.GITHUB_SHA;
+  if (explicit) return explicit.slice(0, 7);
+  try {
+    return execSync('git rev-parse --short HEAD').toString().trim();
+  } catch {
+    return 'dev';
+  }
+}
+const buildId = commitSha();
+const buildTime = new Date().toISOString();
+
 export default defineConfig({
   base: basePath,
+  define: {
+    __BUILD_ID__: JSON.stringify(buildId),
+    __BUILD_TIME__: JSON.stringify(buildTime),
+  },
   plugins: [
     react(),
     VitePWA({
       scope: basePath,
+      // Auto-updating service worker: required for the app to be installable,
+      // and gives offline use. Navigations are network-first (see workbox
+      // below) so a new deploy isn't masked by a stale cached shell; the
+      // version badge confirms which build is live.
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'icons/*.png', 'templates/*.json'],
+      includeAssets: ['favicon.svg', 'icons/*.png', 'templates/*.json'],
       manifest: {
         name: 'Landmark',
         short_name: 'Landmark',
@@ -25,30 +48,55 @@ export default defineConfig({
           {
             src: 'icons/icon-192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: 'icons/icon-512.png',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'icons/icon-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       },
       workbox: {
+        // Precache the whole build (HTML included) with revisioned entries and
+        // serve navigations from the precached index. Old precaches are purged
+        // on activate, so the app can never fall back to a stale, days-old
+        // shell the way the previous accumulating NetworkFirst/SWR runtime
+        // caches could. With registerType 'autoUpdate' + skipWaiting/
+        // clientsClaim and the update check in main.tsx, a new deploy replaces
+        // the old one cleanly and there's only ever one coherent version.
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,wasm}'],
+        navigateFallback: `${basePath}index.html`,
+        // Don't serve the app shell for requests that look like files.
+        navigateFallbackDenylist: [/\/[^/?]+\.[^/?]+$/],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/.*tile.*\.png$/,
+            // Basemap tiles (OSM + Esri satellite) — cache for offline use.
+            // (Only external, content-addressed data is runtime-cached now.)
+            urlPattern: ({ url }) =>
+              url.hostname.includes('tile') || url.hostname.includes('arcgisonline'),
             handler: 'CacheFirst',
             options: {
               cacheName: 'map-tiles',
               expiration: {
-                maxEntries: 500,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
-              }
-            }
-          }
-        ]
+                maxEntries: 800,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       }
     })
   ],
@@ -62,5 +110,10 @@ export default defineConfig({
   },
   build: {
     target: 'es2020'
+  },
+  // Keep function/component names through minification so the error boundary's
+  // component stack is readable in production (helps pinpoint render-loop bugs).
+  esbuild: {
+    keepNames: true
   }
 });

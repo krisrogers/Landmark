@@ -7,6 +7,7 @@ import { calculatePolygonArea, calculateLineLength, formatArea, formatDistance }
 import { Button, Modal, ConfirmModal, LoadingSpinner } from '@/components/common';
 import { FeatureForm } from '@/components/features/FeatureForm';
 import { FeatureTimeline } from '@/components/features/FeatureTimeline';
+import { FeatureMiniMap } from '@/components/features/FeatureMiniMap';
 import { ObservationForm } from '@/components/observations/ObservationForm';
 import { MeasurementForm } from '@/components/measurements/MeasurementForm';
 import { TaskForm } from '@/components/tasks/TaskForm';
@@ -17,7 +18,7 @@ export function FeaturePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { db, isReady } = useDatabase();
-  const { features, deleteFeature, loadFeatures } = useFeatureStore();
+  const { deleteFeature, loadFeatures } = useFeatureStore();
 
   const [feature, setFeature] = useState<Feature | null>(null);
   const [observations, setObservations] = useState<Observation[]>([]);
@@ -32,45 +33,51 @@ export function FeaturePage() {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  // Load feature and related data
+  // Load feature and related data. Read the store via getState() rather than
+  // subscribing to `features` — depending on `features` here while calling
+  // loadFeatures() (which replaces the array) caused an infinite update loop
+  // (React #185) whenever the feature wasn't already in the store.
   useEffect(() => {
     if (!isReady || !db || !id) return;
+    let active = true;
 
-    async function loadData() {
+    (async () => {
       setIsLoading(true);
       try {
-        // Get feature from store or reload
-        let f = features.find((f) => f.id === id);
+        let f = useFeatureStore.getState().features.find((x) => x.id === id);
         if (!f) {
           await loadFeatures();
-          f = features.find((f) => f.id === id);
+          f = useFeatureStore.getState().features.find((x) => x.id === id);
         }
+        if (!active) return;
 
         if (f) {
           setFeature(f);
-
-          // Load related data
           const [obs, meas, tsks, med] = await Promise.all([
-            getObservationsByFeatureId(db!, id!),
-            getMeasurementsByFeatureId(db!, id!),
-            getTasksByFeatureId(db!, id!),
-            getMediaByFeatureId(db!, id!),
+            getObservationsByFeatureId(db, id),
+            getMeasurementsByFeatureId(db, id),
+            getTasksByFeatureId(db, id),
+            getMediaByFeatureId(db, id),
           ]);
-
+          if (!active) return;
           setObservations(obs);
           setMeasurements(meas);
           setTasks(tsks);
           setMedia(med);
+        } else {
+          setFeature(null);
         }
       } catch (err) {
         console.error('Failed to load feature:', err);
       } finally {
-        setIsLoading(false);
+        if (active) setIsLoading(false);
       }
-    }
+    })();
 
-    loadData();
-  }, [isReady, db, id, features, loadFeatures]);
+    return () => {
+      active = false;
+    };
+  }, [isReady, db, id, loadFeatures]);
 
   const handleDelete = async () => {
     if (!id) return;
@@ -138,7 +145,7 @@ export function FeaturePage() {
           </button>
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-semibold text-stone-900 truncate">{feature.name}</h1>
-            <p className="text-sm text-stone-500">{feature.geometryType} • {geometryInfo}</p>
+            <p className="text-sm text-stone-500">Place · {feature.geometryType} · {geometryInfo}</p>
           </div>
           <button
             onClick={() => setShowEditModal(true)}
@@ -170,9 +177,21 @@ export function FeaturePage() {
         )}
       </header>
 
+      {/* Mini map — the place's shape in context */}
+      <FeatureMiniMap feature={feature} />
+
       {/* Quick Actions */}
       <div className="bg-white border-b border-stone-200 px-4 py-2">
         <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+          <button
+            onClick={() => navigate(`/advisor/${feature.id}`)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-sm font-medium hover:bg-primary-100 whitespace-nowrap"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v2m0 14v2m9-9h-2M5 12H3m14.5-6.5l-1.4 1.4M6.9 17.1l-1.4 1.4m12.6 0l-1.4-1.4M6.9 6.9L5.5 5.5M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Planting advice
+          </button>
           <button
             onClick={() => setShowObservationModal(true)}
             className="flex items-center gap-2 px-3 py-1.5 bg-stone-100 text-stone-700 rounded-full text-sm font-medium hover:bg-stone-200 whitespace-nowrap"
@@ -192,6 +211,7 @@ export function FeaturePage() {
             </svg>
             Add Measurement
           </button>
+          {/* Add Task hidden for the alpha (Due functionality). Re-enable to bring it back.
           <button
             onClick={() => setShowTaskModal(true)}
             className="flex items-center gap-2 px-3 py-1.5 bg-stone-100 text-stone-700 rounded-full text-sm font-medium hover:bg-stone-200 whitespace-nowrap"
@@ -201,6 +221,7 @@ export function FeaturePage() {
             </svg>
             Add Task
           </button>
+          */}
         </div>
       </div>
 
