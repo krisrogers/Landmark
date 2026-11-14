@@ -66,33 +66,24 @@ export default defineConfig({
         ]
       },
       workbox: {
-        // Exclude HTML from precache so navigations are served network-first
-        // (always fresh online) rather than from a stale cached app shell.
-        globPatterns: ['**/*.{js,css,ico,png,svg,woff2,wasm}'],
-        navigateFallback: null,
+        // Precache the whole build (HTML included) with revisioned entries and
+        // serve navigations from the precached index. Old precaches are purged
+        // on activate, so the app can never fall back to a stale, days-old
+        // shell the way the previous accumulating NetworkFirst/SWR runtime
+        // caches could. With registerType 'autoUpdate' + skipWaiting/
+        // clientsClaim and the update check in main.tsx, a new deploy replaces
+        // the old one cleanly and there's only ever one coherent version.
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,wasm}'],
+        navigateFallback: `${basePath}index.html`,
+        // Don't serve the app shell for requests that look like files.
+        navigateFallbackDenylist: [/\/[^/?]+\.[^/?]+$/],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
         runtimeCaching: [
           {
-            // App shell / page navigations: fresh when online, cache as fallback.
-            urlPattern: ({ request }) => request.mode === 'navigate',
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'app-shell',
-              networkTimeoutSeconds: 3,
-              expiration: { maxEntries: 8 },
-            },
-          },
-          {
-            // JS/CSS/workers/fonts: serve cached fast, refresh in background.
-            urlPattern: ({ request }) =>
-              ['style', 'script', 'worker', 'font'].includes(request.destination),
-            handler: 'StaleWhileRevalidate',
-            options: { cacheName: 'assets' },
-          },
-          {
             // Basemap tiles (OSM + Esri satellite) — cache for offline use.
+            // (Only external, content-addressed data is runtime-cached now.)
             urlPattern: ({ url }) =>
               url.hostname.includes('tile') || url.hostname.includes('arcgisonline'),
             handler: 'CacheFirst',
