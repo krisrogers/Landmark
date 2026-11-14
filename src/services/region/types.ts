@@ -111,6 +111,11 @@ export interface SiteBrief {
     geometryType: 'Point' | 'LineString' | 'Polygon';
     areaHa?: number;
     lengthM?: number;
+    /** Best-fit rectangle for a polygon: long side, short side (metres). */
+    approxLengthM?: number;
+    approxWidthM?: number;
+    /** Compass axis the long side runs along, e.g. "NE–SW". */
+    orientation?: string;
   };
   elevation: ElevationContext | null;
   climate: ClimateContext | null;

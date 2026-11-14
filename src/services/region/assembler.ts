@@ -5,11 +5,17 @@
  * records what was unavailable so the advisor is told what it does NOT know.
  */
 import type { Feature, PolygonGeometry, LineStringGeometry } from '@/types';
-import { getGeometryCenter, calculatePolygonArea, calculateLineLength } from '@/services/geo';
+import {
+  getGeometryCenter,
+  calculatePolygonArea,
+  calculateLineLength,
+  approximateRectangle,
+} from '@/services/geo';
 import type { ContextProvider, LatLng, SiteBrief } from './types';
 import { resolveRegion } from './resolver';
 import { packForRegion } from './packs';
 import { hemisphereOf } from './interpret';
+import { degToCompass8 } from './terrain';
 import { getCached, setCached } from './cache';
 
 /** Per-provider network timeout — a stalled request must not hang the brief. */
@@ -94,8 +100,14 @@ export async function assembleSiteBrief(
     geometryType: feature.geometryType,
   };
   if (feature.geometryType === 'Polygon') {
-    place.areaHa =
-      Math.round((calculatePolygonArea(feature.geometry as PolygonGeometry) / 10_000) * 100) / 100;
+    const polygon = feature.geometry as PolygonGeometry;
+    place.areaHa = Math.round((calculatePolygonArea(polygon) / 10_000) * 100) / 100;
+    const rect = approximateRectangle(polygon);
+    if (rect) {
+      place.approxLengthM = rect.lengthM;
+      place.approxWidthM = rect.widthM;
+      place.orientation = `${degToCompass8(rect.bearingDeg)}–${degToCompass8((rect.bearingDeg + 180) % 360)}`;
+    }
   } else if (feature.geometryType === 'LineString') {
     place.lengthM = Math.round(calculateLineLength(feature.geometry as LineStringGeometry));
   }

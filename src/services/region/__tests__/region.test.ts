@@ -9,6 +9,8 @@ import {
 } from '../interpret';
 import { resolveRegion } from '../resolver';
 import { classifyTexture } from '../providers/soil.soilGrids';
+import { approximateRectangle } from '@/services/geo';
+import type { PolygonGeometry } from '@/types';
 
 describe('degToCompass8', () => {
   it('maps bearings to the nearest 8-wind point', () => {
@@ -124,6 +126,43 @@ describe('resolveRegion', () => {
   it('resolves elsewhere to global', () => {
     expect(resolveRegion({ lat: 51.5, lng: -0.12 })).toBe('global'); // London
     expect(resolveRegion({ lat: -41.3, lng: 174.8 })).toBe('global'); // Wellington (NZ)
+  });
+});
+
+describe('approximateRectangle', () => {
+  function rect(lat0: number, lng0: number, ewM: number, nsM: number): PolygonGeometry {
+    const mPerLat = 111_320;
+    const mPerLng = 111_320 * Math.cos((lat0 * Math.PI) / 180);
+    const dLng = ewM / 2 / mPerLng;
+    const dLat = nsM / 2 / mPerLat;
+    return {
+      type: 'Polygon',
+      coordinates: [[
+        [lng0 - dLng, lat0 - dLat],
+        [lng0 + dLng, lat0 - dLat],
+        [lng0 + dLng, lat0 + dLat],
+        [lng0 - dLng, lat0 + dLat],
+        [lng0 - dLng, lat0 - dLat],
+      ]],
+    };
+  }
+
+  it('reads a long east-west strip as long × narrow, axis E–W', () => {
+    const r = approximateRectangle(rect(-27, 153, 100, 20))!;
+    expect(r.lengthM).toBeGreaterThanOrEqual(96);
+    expect(r.lengthM).toBeLessThanOrEqual(104);
+    expect(r.widthM).toBeGreaterThanOrEqual(17);
+    expect(r.widthM).toBeLessThanOrEqual(23);
+    expect(Math.abs(r.bearingDeg - 90)).toBeLessThanOrEqual(5); // E–W axis
+  });
+
+  it('reads a square as roughly equal sides', () => {
+    const r = approximateRectangle(rect(-27, 153, 50, 50))!;
+    expect(Math.abs(r.lengthM - r.widthM)).toBeLessThanOrEqual(4);
+  });
+
+  it('returns null for a degenerate ring', () => {
+    expect(approximateRectangle({ type: 'Polygon', coordinates: [[[0, 0]]] })).toBeNull();
   });
 });
 

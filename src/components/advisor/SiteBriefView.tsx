@@ -10,6 +10,17 @@ export function SiteBriefView({ brief }: { brief: SiteBrief }) {
     value: `${brief.regionLabel} · ${brief.hemisphere} hemisphere`,
   });
 
+  const p = brief.place;
+  if (p.approxLengthM !== undefined && p.approxWidthM !== undefined) {
+    rows.push({
+      label: 'Shape',
+      value:
+        `≈ ${p.approxLengthM} × ${p.approxWidthM} m` +
+        (p.orientation ? ` · long axis ${p.orientation}` : '') +
+        (p.areaHa !== undefined ? ` · ${p.areaHa} ha` : ''),
+    });
+  }
+
   if (brief.elevation) {
     const e = brief.elevation;
     const aspect =

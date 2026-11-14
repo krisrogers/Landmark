@@ -38,6 +38,12 @@ export function briefToConditionsText(brief: SiteBrief): string {
   let placeLine = `Place: "${place.name}" (${place.geometryType})`;
   if (place.areaHa !== undefined) placeLine += `, ~${place.areaHa} ha`;
   if (place.lengthM !== undefined) placeLine += `, ~${place.lengthM} m long`;
+  if (place.approxLengthM !== undefined && place.approxWidthM !== undefined) {
+    placeLine +=
+      `. Shape ≈ a ${place.approxLengthM} m × ${place.approxWidthM} m rectangle` +
+      (place.orientation ? `, long axis running ${place.orientation}` : '') +
+      ` — use these dimensions (not just area) for row count, spacing and layout`;
+  }
   lines.push(placeLine + '.');
 
   if (brief.elevation) {
