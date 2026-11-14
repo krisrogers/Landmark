@@ -7,6 +7,7 @@ import { calculatePolygonArea, calculateLineLength, formatArea, formatDistance }
 import { Button, Modal, ConfirmModal, LoadingSpinner } from '@/components/common';
 import { FeatureForm } from '@/components/features/FeatureForm';
 import { FeatureTimeline } from '@/components/features/FeatureTimeline';
+import { FeatureMiniMap } from '@/components/features/FeatureMiniMap';
 import { ObservationForm } from '@/components/observations/ObservationForm';
 import { MeasurementForm } from '@/components/measurements/MeasurementForm';
 import { TaskForm } from '@/components/tasks/TaskForm';
@@ -175,6 +176,9 @@ export function FeaturePage() {
           <p className="text-sm text-stone-600 mt-2">{feature.description}</p>
         )}
       </header>
+
+      {/* Mini map — the place's shape in context */}
+      <FeatureMiniMap feature={feature} />
 
       {/* Quick Actions */}
       <div className="bg-white border-b border-stone-200 px-4 py-2">
