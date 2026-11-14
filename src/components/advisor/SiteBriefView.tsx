@@ -11,13 +11,10 @@ export function SiteBriefView({ brief }: { brief: SiteBrief }) {
   });
 
   const p = brief.place;
-  if (p.approxLengthM !== undefined && p.approxWidthM !== undefined) {
+  if (p.shapeSummary) {
     rows.push({
       label: 'Shape',
-      value:
-        `≈ ${p.approxLengthM} × ${p.approxWidthM} m` +
-        (p.orientation ? ` · long axis ${p.orientation}` : '') +
-        (p.areaHa !== undefined ? ` · ${p.areaHa} ha` : ''),
+      value: p.shapeSummary + (p.areaHa !== undefined ? ` · ${p.areaHa} ha` : ''),
     });
   }
 

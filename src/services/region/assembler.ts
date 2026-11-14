@@ -9,7 +9,7 @@ import {
   getGeometryCenter,
   calculatePolygonArea,
   calculateLineLength,
-  approximateRectangle,
+  approximateShape,
 } from '@/services/geo';
 import type { ContextProvider, LatLng, SiteBrief } from './types';
 import { resolveRegion } from './resolver';
@@ -102,11 +102,17 @@ export async function assembleSiteBrief(
   if (feature.geometryType === 'Polygon') {
     const polygon = feature.geometry as PolygonGeometry;
     place.areaHa = Math.round((calculatePolygonArea(polygon) / 10_000) * 100) / 100;
-    const rect = approximateRectangle(polygon);
-    if (rect) {
-      place.approxLengthM = rect.lengthM;
-      place.approxWidthM = rect.widthM;
-      place.orientation = `${degToCompass8(rect.bearingDeg)}–${degToCompass8((rect.bearingDeg + 180) % 360)}`;
+    const shape = approximateShape(polygon);
+    if (shape) {
+      place.shapeKind = shape.kind;
+      const axis = `${degToCompass8(shape.bearingDeg)}–${degToCompass8((shape.bearingDeg + 180) % 360)}`;
+      if (shape.kind === 'circle') {
+        place.shapeSummary = `roughly circular, ~${shape.diameterM} m across`;
+      } else if (shape.kind === 'triangle') {
+        place.shapeSummary = `roughly triangular, base ~${shape.baseM} m × height ~${shape.heightM} m, long axis ${axis}`;
+      } else {
+        place.shapeSummary = `roughly a ${shape.lengthM} × ${shape.widthM} m rectangle, long axis ${axis}`;
+      }
     }
   } else if (feature.geometryType === 'LineString') {
     place.lengthM = Math.round(calculateLineLength(feature.geometry as LineStringGeometry));

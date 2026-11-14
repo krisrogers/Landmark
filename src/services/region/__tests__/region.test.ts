@@ -9,7 +9,7 @@ import {
 } from '../interpret';
 import { resolveRegion } from '../resolver';
 import { classifyTexture } from '../providers/soil.soilGrids';
-import { approximateRectangle } from '@/services/geo';
+import { approximateRectangle, approximateShape } from '@/services/geo';
 import type { PolygonGeometry } from '@/types';
 
 describe('degToCompass8', () => {
@@ -163,6 +163,50 @@ describe('approximateRectangle', () => {
 
   it('returns null for a degenerate ring', () => {
     expect(approximateRectangle({ type: 'Polygon', coordinates: [[[0, 0]]] })).toBeNull();
+  });
+});
+
+describe('approximateShape', () => {
+  const lat0 = -27;
+  const lng0 = 153;
+  const mPerLat = 111_320;
+  const mPerLng = 111_320 * Math.cos((lat0 * Math.PI) / 180);
+  const toLngLat = (xm: number, ym: number): [number, number] => [
+    lng0 + xm / mPerLng,
+    lat0 + ym / mPerLat,
+  ];
+
+  it('classifies a near-circular polygon as a circle', () => {
+    const ring: [number, number][] = [];
+    const r = 50;
+    for (let i = 0; i <= 32; i++) {
+      const a = (2 * Math.PI * i) / 32;
+      ring.push(toLngLat(r * Math.cos(a), r * Math.sin(a)));
+    }
+    const s = approximateShape({ type: 'Polygon', coordinates: [ring] })!;
+    expect(s.kind).toBe('circle');
+    expect(Math.abs((s.diameterM ?? 0) - 100)).toBeLessThanOrEqual(6);
+  });
+
+  it('classifies a right triangle as a triangle', () => {
+    const ring = [toLngLat(0, 0), toLngLat(100, 0), toLngLat(0, 40), toLngLat(0, 0)];
+    const s = approximateShape({ type: 'Polygon', coordinates: [ring] })!;
+    expect(s.kind).toBe('triangle');
+    expect(s.baseM).toBeGreaterThanOrEqual(96);
+    expect(s.heightM).toBeGreaterThanOrEqual(36);
+  });
+
+  it('classifies a filled rectangle as a rectangle', () => {
+    const ring = [
+      toLngLat(-50, -10),
+      toLngLat(50, -10),
+      toLngLat(50, 10),
+      toLngLat(-50, 10),
+      toLngLat(-50, -10),
+    ];
+    const s = approximateShape({ type: 'Polygon', coordinates: [ring] })!;
+    expect(s.kind).toBe('rectangle');
+    expect(s.lengthM).toBeGreaterThanOrEqual(96);
   });
 });
 

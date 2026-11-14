@@ -111,11 +111,10 @@ export interface SiteBrief {
     geometryType: 'Point' | 'LineString' | 'Polygon';
     areaHa?: number;
     lengthM?: number;
-    /** Best-fit rectangle for a polygon: long side, short side (metres). */
-    approxLengthM?: number;
-    approxWidthM?: number;
-    /** Compass axis the long side runs along, e.g. "NE–SW". */
-    orientation?: string;
+    /** Best-fit simple primitive for a polygon. */
+    shapeKind?: 'circle' | 'triangle' | 'rectangle';
+    /** Plain-language shape description, e.g. "≈ 180 × 25 m rectangle, long axis NE–SW". */
+    shapeSummary?: string;
   };
   elevation: ElevationContext | null;
   climate: ClimateContext | null;
