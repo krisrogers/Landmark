@@ -179,6 +179,22 @@ export function CaptureControls() {
                 icon={<PinIcon />}
               />
             </div>
+
+            <p className="px-4 pt-4 pb-1 text-xs font-extrabold text-stone-400 uppercase tracking-wide">
+              Plan
+            </p>
+            <div className="bg-white mx-3 rounded-2xl border border-stone-200 overflow-hidden">
+              <SheetOption
+                title="New task"
+                subtitle="A job that isn't tied to a mapped area (yet)"
+                onClick={() => {
+                  setCaptureOpen(false);
+                  navigate('/task/new');
+                }}
+                icon={<TaskIcon />}
+                tint="stone"
+              />
+            </div>
           </div>
         </div>
       )}
@@ -252,6 +268,15 @@ function AreaIcon() {
   return (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 8l7-4 7 4v8l-7 4-7-4z" />
+    </svg>
+  );
+}
+
+function TaskIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 13l2 2 4-4" />
     </svg>
   );
 }

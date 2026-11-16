@@ -90,6 +90,7 @@ export default function App() {
           <Route path="/asset/new" element={<AssetEditorPage />} />
           <Route path="/asset/:id" element={<AssetPage />} />
           <Route path="/task/new" element={<TaskEditorPage />} />
+          <Route path="/task/:id" element={<TaskEditorPage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/templates" element={<TemplatesPage />} />
           <Route path="/export" element={<ExportPage />} />

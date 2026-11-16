@@ -143,7 +143,8 @@ export function TaskForm({
         <div>
           <label className="block text-sm font-medium text-stone-700 mb-1">On</label>
           <div className="flex gap-1 mb-2">
-            {(['none', 'place', 'asset'] as const).map((t) => (
+            {/* Asset hidden while assets aren't surfaced in the app */}
+            {(['none', 'place'] as const).map((t) => (
               <button
                 key={t}
                 type="button"

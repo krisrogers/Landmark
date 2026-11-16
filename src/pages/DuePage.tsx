@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { differenceInCalendarDays, startOfDay, addDays, format } from 'date-fns';
 import { useDatabase } from '@/hooks';
 import {
-  getDueTasks,
+  getOpenTasks,
   getAllFeatures,
   getAllAssets,
   completeTask,
@@ -19,6 +19,10 @@ interface Section {
   label: string;
   color: string; // rail + accent colour
   tasks: Task[];
+}
+
+function hasDate(task: Task): boolean {
+  return !!(task.snoozedUntil ?? task.reminderDate);
 }
 
 function effectiveDate(task: Task): Date {
@@ -37,6 +41,7 @@ const BUCKETS = {
   overdue: { label: 'Overdue', color: '#dc2626' },
   week: { label: 'This week', color: '#d97706' },
   later: { label: 'Later', color: '#a8a29e' },
+  nodate: { label: 'No date', color: '#78716c' },
 };
 
 export function DuePage() {
@@ -53,7 +58,7 @@ export function DuePage() {
     setIsLoading(true);
     try {
       const [due, feats, asts] = await Promise.all([
-        getDueTasks(db),
+        getOpenTasks(db),
         getAllFeatures(db),
         getAllAssets(db),
       ]);
@@ -93,8 +98,17 @@ export function DuePage() {
   const sections = useMemo<Section[]>(() => {
     if (groupBy === 'date') {
       const today = startOfDay(new Date());
-      const buckets: Record<keyof typeof BUCKETS, Task[]> = { overdue: [], week: [], later: [] };
+      const buckets: Record<keyof typeof BUCKETS, Task[]> = {
+        overdue: [],
+        week: [],
+        later: [],
+        nodate: [],
+      };
       for (const t of tasks) {
+        if (!hasDate(t)) {
+          buckets.nodate.push(t);
+          continue;
+        }
         const days = differenceInCalendarDays(startOfDay(effectiveDate(t)), today);
         if (days < 0) buckets.overdue.push(t);
         else if (days <= 7) buckets.week.push(t);
@@ -155,6 +169,8 @@ export function DuePage() {
     const { kind } = subjectOf(task);
     const placeId = task.subjectId ?? task.featureId;
     if (kind === 'place' && placeId) navigate(`/feature/${placeId}`);
+    // Standalone tasks open for editing — e.g. to attach them to a place once mapped.
+    else navigate(`/task/${task.id}`);
   };
 
   return (
@@ -163,9 +179,18 @@ export function DuePage() {
       <header className="bg-white border-b border-stone-200 px-4 pt-3 pb-2 safe-top">
         <div className="flex items-baseline justify-between">
           <h1 className="text-2xl font-bold text-stone-900 tracking-tight">Due</h1>
-          <span className="text-sm font-medium text-stone-500">
-            {tasks.length} open
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-stone-500">{tasks.length} open</span>
+            <button
+              onClick={() => navigate('/task/new')}
+              className="flex items-center gap-1 text-primary-700 text-sm font-bold"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
+              </svg>
+              New task
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-2 mt-3">
           <span className="text-xs font-bold text-stone-400 uppercase tracking-wide">Group</span>
@@ -199,9 +224,9 @@ export function DuePage() {
               <circle cx="12" cy="12" r="9" strokeWidth={2} />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 2" />
             </svg>
-            <p className="text-stone-500 text-center font-medium">Nothing due</p>
+            <p className="text-stone-500 text-center font-medium">No open tasks</p>
             <p className="text-stone-400 text-sm text-center mt-1">
-              Add a reminder to a task and it will show up here
+              Tap “New task” above, or add one from a place
             </p>
           </div>
         ) : (
@@ -242,8 +267,9 @@ interface DueRowProps {
 }
 
 function DueRow({ task, railColor, subject, onOpen, onSnooze, onComplete }: DueRowProps) {
+  const dated = hasDate(task);
   const days = differenceInCalendarDays(startOfDay(effectiveDate(task)), startOfDay(new Date()));
-  const dateColor = days < 0 ? '#dc2626' : days <= 7 ? '#d97706' : '#78716c';
+  const dateColor = !dated ? '#a8a29e' : days < 0 ? '#dc2626' : days <= 7 ? '#d97706' : '#78716c';
   const recurs = task.recurrenceInterval && task.recurrenceUnit;
 
   return (
@@ -282,7 +308,7 @@ function DueRow({ task, railColor, subject, onOpen, onSnooze, onComplete }: DueR
           ))}
           <div className="flex-1" />
           <span className="text-xs font-bold" style={{ color: dateColor }}>
-            {dueLabel(days)}
+            {dated ? dueLabel(days) : 'No date'}
           </span>
         </div>
 

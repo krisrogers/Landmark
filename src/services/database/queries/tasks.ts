@@ -124,6 +124,19 @@ export async function getDueTasks(db: DatabaseService): Promise<Task[]> {
   return rows.map(rowToTask);
 }
 
+/** All open tasks: dated ones first (soonest first), then undated (newest first). */
+export async function getOpenTasks(db: DatabaseService): Promise<Task[]> {
+  const rows = await db.all<TaskRow>(`
+    SELECT * FROM tasks
+    WHERE status NOT IN ('done', 'abandoned')
+    ORDER BY
+      CASE WHEN COALESCE(snoozed_until, reminder_date) IS NULL THEN 1 ELSE 0 END,
+      COALESCE(snoozed_until, reminder_date) ASC,
+      created_at DESC
+  `);
+  return rows.map(rowToTask);
+}
+
 export async function getFilteredTasks(
   db: DatabaseService,
   filters: TaskFilters
