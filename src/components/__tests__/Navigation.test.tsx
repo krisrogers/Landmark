@@ -8,9 +8,9 @@ describe('Navigation', () => {
 
     expect(screen.getByText('Map')).toBeInTheDocument();
     expect(screen.getByText('Places')).toBeInTheDocument();
+    expect(screen.getByText('Due')).toBeInTheDocument();
     expect(screen.getByText('Settings')).toBeInTheDocument();
-    // Due and Things are hidden for the alpha
-    expect(screen.queryByText('Due')).not.toBeInTheDocument();
+    // Things (assets) stays hidden for now
     expect(screen.queryByText('Things')).not.toBeInTheDocument();
   });
 
@@ -18,7 +18,7 @@ describe('Navigation', () => {
     render(<Navigation />);
 
     const navLinks = screen.getAllByRole('link');
-    expect(navLinks).toHaveLength(3);
+    expect(navLinks).toHaveLength(4);
   });
 
   it('has correct paths for navigation links', () => {
@@ -26,6 +26,7 @@ describe('Navigation', () => {
 
     expect(screen.getByRole('link', { name: /map/i })).toHaveAttribute('href', '/');
     expect(screen.getByRole('link', { name: /places/i })).toHaveAttribute('href', '/places');
+    expect(screen.getByRole('link', { name: /due/i })).toHaveAttribute('href', '/due');
     expect(screen.getByRole('link', { name: /settings/i })).toHaveAttribute('href', '/settings');
   });
 });

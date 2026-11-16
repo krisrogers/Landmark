@@ -21,12 +21,22 @@ const settingsIcon = (
   </svg>
 );
 
-// Due and Things are hidden for the alpha (mapping + measuring focus).
+const dueIcon = (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="8.5" strokeWidth={2} />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 7.5V12l3 2" />
+  </svg>
+);
+
+// Things (assets) stays hidden for now; tasks are surfaced via Due + place detail.
 const leftItems = [
   { path: '/', label: 'Map', icon: mapIcon },
   { path: '/places', label: 'Places', icon: placesIcon },
 ];
-const rightItems = [{ path: '/settings', label: 'Settings', icon: settingsIcon }];
+const rightItems = [
+  { path: '/due', label: 'Due', icon: dueIcon },
+  { path: '/settings', label: 'Settings', icon: settingsIcon },
+];
 
 export function Navigation() {
   const location = useLocation();
