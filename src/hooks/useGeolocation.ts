@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Geolocation, type Position } from '@capacitor/geolocation';
 import { isNative } from '@/utils/platform';
 import { useMapStore } from '@/store';
@@ -20,8 +20,8 @@ interface UseGeolocationOptions {
 export function useGeolocation(options: UseGeolocationOptions = {}) {
   const {
     enableHighAccuracy = true,
-    timeout = 10000,
-    maximumAge = 0,
+    timeout = 20000,
+    maximumAge = 5000,
     watch = false,
   } = options;
 
@@ -31,11 +31,14 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
     isLoading: false,
     isWatching: false,
   });
+  const watchIdRef = useRef<string | null>(null);
+  const isWatchingRef = useRef(false);
 
-  const { setGpsPosition, setGpsError } = useMapStore();
+  const { setGpsPosition, setGpsError, beginGpsRequest } = useMapStore();
 
   const getCurrentPosition = useCallback(async () => {
     setState((s) => ({ ...s, isLoading: true, error: null }));
+    beginGpsRequest();
 
     try {
       const position = await Geolocation.getCurrentPosition({
@@ -62,18 +65,20 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
         isLoading: false,
         error: errorMessage,
       }));
-      setGpsError(errorMessage);
+      setGpsError(errorMessage, getErrorKind(err));
       throw err;
     }
-  }, [enableHighAccuracy, timeout, maximumAge, setGpsPosition, setGpsError]);
+  }, [enableHighAccuracy, timeout, maximumAge, setGpsPosition, setGpsError, beginGpsRequest]);
 
   const startWatching = useCallback(async () => {
-    if (state.isWatching) return;
+    if (isWatchingRef.current) return;
+    isWatchingRef.current = true;
 
     setState((s) => ({ ...s, isWatching: true, error: null }));
+    beginGpsRequest();
 
     try {
-      await Geolocation.watchPosition(
+      const id = await Geolocation.watchPosition(
         {
           enableHighAccuracy,
           timeout,
@@ -83,26 +88,34 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
           if (err) {
             const errorMessage = getErrorMessage(err);
             setState((s) => ({ ...s, error: errorMessage }));
-            setGpsError(errorMessage);
+            setGpsError(errorMessage, getErrorKind(err));
           } else if (position) {
             setState((s) => ({ ...s, position, error: null }));
             setGpsPosition(position as unknown as GeolocationPosition);
           }
         }
       );
+      watchIdRef.current = id;
     } catch (err) {
+      isWatchingRef.current = false;
       const errorMessage = getErrorMessage(err);
       setState((s) => ({
         ...s,
         isWatching: false,
         error: errorMessage,
       }));
-      setGpsError(errorMessage);
+      setGpsError(errorMessage, getErrorKind(err));
     }
-  }, [state.isWatching, enableHighAccuracy, timeout, maximumAge, setGpsPosition, setGpsError]);
+    // Deps are all stable (zustand actions + literal options), so this callback
+    // is stable and the watch effect below won't re-subscribe in a loop.
+  }, [enableHighAccuracy, timeout, maximumAge, setGpsPosition, setGpsError, beginGpsRequest]);
 
   const stopWatching = useCallback(async () => {
-    await Geolocation.clearWatch({ id: '' });
+    if (watchIdRef.current != null) {
+      await Geolocation.clearWatch({ id: watchIdRef.current });
+      watchIdRef.current = null;
+    }
+    isWatchingRef.current = false;
     setState((s) => ({ ...s, isWatching: false }));
   }, []);
 
@@ -139,6 +152,19 @@ function getErrorMessage(error: unknown): string {
   }
 
   return 'Unknown geolocation error';
+}
+
+/** Classify a geolocation error so the UI can tell terminal from transient. */
+function getErrorKind(error: unknown): 'denied' | 'timeout' | 'unavailable' | 'unknown' {
+  const code = (error as { code?: number } | null)?.code;
+  if (code === 1) return 'denied';
+  if (code === 2) return 'unavailable';
+  if (code === 3) return 'timeout';
+  const m = getErrorMessage(error).toLowerCase();
+  if (/denied|permission/.test(m)) return 'denied';
+  if (/timeout|timed out/.test(m)) return 'timeout';
+  if (/unavailable|position/.test(m)) return 'unavailable';
+  return 'unknown';
 }
 
 export async function checkGeolocationPermission(): Promise<'granted' | 'denied' | 'prompt'> {

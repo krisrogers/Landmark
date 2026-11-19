@@ -1,21 +1,17 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Circle, CircleMarker } from 'react-leaflet';
 import { useGeolocation } from '@/hooks';
 import { useMapStore } from '@/store';
 
 export function GpsControl() {
-  // Circle and CircleMarker components get their context from MapContainer automatically
-  const { showGpsLocation, gpsPosition } = useMapStore();
-  const { getCurrentPosition, latitude, longitude, accuracy } = useGeolocation();
-
-  // Get initial position when component mounts
-  useEffect(() => {
-    if (showGpsLocation && !gpsPosition) {
-      getCurrentPosition().catch(() => {
-        // Error is handled in the hook
-      });
-    }
-  }, [showGpsLocation, gpsPosition, getCurrentPosition]);
+  // Circle and CircleMarker get their context from MapContainer automatically.
+  const { showGpsLocation } = useMapStore();
+  // Continuously watch position so accuracy refines as the GPS warms up,
+  // rather than stopping at the first (often coarse) fix.
+  const { latitude, longitude, accuracy } = useGeolocation({
+    watch: showGpsLocation,
+    enableHighAccuracy: true,
+  });
 
   const position = useMemo(() => {
     if (latitude && longitude) {

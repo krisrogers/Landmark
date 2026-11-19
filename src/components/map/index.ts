@@ -1,6 +1,11 @@
 export { MapView } from './MapView';
 export { FeatureLayer } from './FeatureLayer';
+export { AssetLayer } from './AssetLayer';
 export { GpsControl } from './GpsControl';
-export { DrawingTools, DrawingToolbar } from './DrawingTools';
+export { DrawingTools } from './DrawingTools';
+export { WalkRecorder } from './WalkRecorder';
+export { CaptureControls } from './CaptureControls';
+export { MeasureResult } from './MeasureResult';
+export { GpsStatus } from './GpsStatus';
 export { BasemapSelector } from './BasemapSelector';
 export { MapControls, GpsControlButton } from './MapControls';

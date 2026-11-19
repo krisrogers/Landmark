@@ -85,6 +85,31 @@ body {
   transform: scale(1.2);
 }
 
+/* Asset markers (rounded square to distinguish from place circles) */
+.landmark-asset-marker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: #166534;
+  border: 3px solid white;
+  border-radius: 9px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Due indicator dot on a marker */
+.landmark-due-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
 .landmark-marker-label {
   position: absolute;
   top: 100%;
